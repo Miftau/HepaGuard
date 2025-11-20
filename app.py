@@ -888,6 +888,25 @@ def index():
     )
     # Option 2: Render a simple landing page that redirects to /form
     # return render_template("index.html") # If you create a simple index.html
+    
+@app.route("/about")
+def about():
+    return render_template(
+        "about.html", 
+    )
+    
+
+@app.route("/contact")
+def contact():
+    return render_template(
+        "contact.html",
+    )
+    
+@app.route("/resources")
+def resources():
+    return render_template(
+        "resources.html", 
+    )
 
 @app.route("/form")
 def form():

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>{{ title or "RenalGuard" }}</title>
+  <title>{{ title or "HepaGuard" }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- Tailwind -->
@@ -16,8 +16,8 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css">
   <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
 
-  <!-- Favicon - Updated to a potential kidney icon -->
-  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3157/3157715.png"> <!-- Example kidney icon -->
+  <!-- Favicon - Updated to a potential liver icon -->
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/1006/1006745.png"> <!-- Example liver icon -->
 
   <!-- Preload heartbeat sound (optional) -->
   <link rel="preload" href="https://assets.mixkit.co/sfx/preview/mixkit-heartbeat-747.mp3" as="audio">
@@ -138,11 +138,11 @@
     }
     .animate-fade-in { animation: fade-in 1s ease-out forwards; }
 
-    @keyframes pulse-kidney {
+    @keyframes pulse-liver {
       0%,100% { transform: scale(1); }
       50%     { transform: scale(1.15); }
     }
-    .animate-pulse-kidney { animation: pulse-kidney 2s infinite ease-in-out; } /* Updated animation name */
+    .animate-pulse-liver { animation: pulse-liver 2s infinite ease-in-out; } /* Updated animation name */
 
     /* Mobile menu slide-down */
     #mobile-menu {
@@ -163,9 +163,9 @@
 
     /* Active link highlight */
     .nav-active {
-      @apply text-blue-500 font-semibold; /* Changed color */
+      @apply text-green-500 font-semibold; /* Changed color for liver theme */
     }
-    .dark .nav-active { @apply text-blue-400; } /* Changed color */
+    .dark .nav-active { @apply text-green-400; } /* Changed color for liver theme */
   </style>
 </head>
 
@@ -176,8 +176,8 @@
     <div class="container mx-auto flex justify-between items-center px-4 sm:px-6">
 
       <!-- Logo -->
-      <a href="/" class="text-2xl sm:text-4xl font-bold text-blue-500 flex items-center"> <!-- Changed color -->
-        <span class="mr-2 animate-pulse-kidney">🫘</span> RenalGuard <!-- Updated emoji and text -->
+      <a href="/" class="text-2xl sm:text-4xl font-bold text-green-500 flex items-center"> <!-- Changed color -->
+        <span class="mr-2 animate-pulse-liver">🫀</span> HepaGuard <!-- Updated emoji and text -->
       </a>
 
       <!-- Dark-mode toggle (visible on all sizes) -->
@@ -203,7 +203,7 @@
           <li>
             <a href="{{ url }}"
             {% if is_external %}target="_blank" rel="noopener noreferrer"{% endif %}
-               class="block hover:text-blue-500 text-lg sm:text-xl transition-all duration-300 px-4 py-2 sm:p-0 <!-- Changed color -->
+               class="block hover:text-green-500 text-lg sm:text-xl transition-all duration-300 px-4 py-2 sm:p-0 <!-- Changed color -->
                       {% if request.path == url %}nav-active{% endif %}">
               {{ label }}
             </a>
@@ -211,10 +211,10 @@
         {% endmacro %}
 
         {{ nav_item('/', 'Home') }}
-        {{ nav_item('https://cardioguard-u3g4.onrender.com/about', 'About', is_external=true) }} <!-- Example External Link -->
+        {{ nav_item('/about', 'About') }} <!-- Example External Link -->
         {{ nav_item('https://cardioguard-u3g4.onrender.com/contact', 'Contact', is_external=true) }} <!-- Example External Link -->
         {{ nav_item('/resources', 'Resources') }} <!-- Example External Link -->
-        {{ nav_item('/chat', 'RenalConsultant') }}
+        {{ nav_item('/chat', 'HepaConsultant') }}
          <!-- Login / Logout logic -->
         {% if session.get('user_id') %}
           <li>
@@ -226,7 +226,7 @@
         {% else %}
           <li>
             <a href="/login"
-               class="block bg-blue-500 text-white px-4 py-2 rounded-full hover:bg-blue-600 hover:shadow-xl transform hover:scale-105 transition-all duration-300 text-md sm:text-lg text-center font-semibold mx-4 sm:mx-0"> <!-- Changed color -->
+               class="block bg-green-500 text-white px-4 py-2 rounded-full hover:bg-green-600 hover:shadow-xl transform hover:scale-105 transition-all duration-300 text-md sm:text-lg text-center font-semibold mx-4 sm:mx-0"> <!-- Changed color -->
               Login
             </a>
           </li>
@@ -251,10 +251,10 @@
         <!-- Column 1 -->
         <div data-aos="fade-right" data-aos-delay="100">
           <h3 class="text-lg sm:text-xl font-bold text-white mb-4 flex items-center">
-            <span class="mr-2 animate-pulse-kidney">🫘</span> RenalGuard <!-- Updated emoji and text -->
+            <span class="mr-2 animate-pulse-liver">🫀</span> HepaGuard <!-- Updated emoji and text -->
           </h3>
           <p class="mb-4 text-base leading-relaxed">
-            RenalGuard is an AI-powered diagnostic tool designed to help healthcare professionals and individuals assess the likelihood of kidney disease. By combining clinical parameters and data science, it delivers fast, data-driven insights.
+            HepaGuard is an AI-powered diagnostic tool designed to help healthcare professionals and individuals assess the likelihood of liver disease. By combining clinical parameters and data science, it delivers fast, data-driven insights.
           </p>
           <div class="flex space-x-4">
             <a href="#" class="text-gray-400 hover:text-white transform hover:scale-125 transition-all duration-300"><i class="fab fa-facebook-f"></i></a>
@@ -283,8 +283,8 @@
           <h3 class="text-lg font-semibold text-white mb-4">Services</h3>
           <ul class="space-y-2 text-base">
             <li><a href="#" class="hover:text-white transition-all duration-300">Remote Patient Monitoring</a></li>
-            <li><a href="#" class="hover:text-white transition-all duration-300">TeleNephrology Consultations</a></li> <!-- Updated service -->
-            <li><a href="#" class="hover:text-white transition-all duration-300">Dietary Prescription (Kidney-Friendly)</a></li> <!-- Updated service -->
+            <li><a href="#" class="hover:text-white transition-all duration-300">TeleHepatology Consultations</a></li> <!-- Updated service -->
+            <li><a href="#" class="hover:text-white transition-all duration-300">Dietary Prescription (Liver-Friendly)</a></li> <!-- Updated service -->
             <li><a href="#" class="hover:text-white transition-all duration-300">AI Exercise Partner</a></li>
             <li><a href="#" class="hover:text-white transition-all duration-300">HealthTech</a></li>
           </ul>
@@ -295,19 +295,19 @@
           <h3 class="text-lg font-semibold text-white mb-4">Contact Us</h3>
           <ul class="space-y-3 text-base">
             <li class="flex items-start hover:text-white transition-all duration-300">
-              <i class="fas fa-map-marker-alt mt-1 mr-3 text-blue-500"></i> <!-- Changed color -->
+              <i class="fas fa-map-marker-alt mt-1 mr-3 text-green-500"></i> <!-- Changed color -->
               <span>BLK 4 Railway Compound, Ibadan.</span>
             </li>
             <li class="flex items-center hover:text-white transition-all duration-300">
-              <i class="fas fa-phone mr-3 text-blue-500"></i> <!-- Changed color -->
+              <i class="fas fa-phone mr-3 text-green-500"></i> <!-- Changed color -->
               <a href="tel:+2348066127153" class="hover:underline">+234 8066127153</a>
             </li>
             <li class="flex items-center hover:text-white transition-all duration-300">
-              <i class="fas fa-envelope mr-3 text-blue-500"></i> <!-- Changed color -->
+              <i class="fas fa-envelope mr-3 text-green-500"></i> <!-- Changed color -->
               <a href="mailto:muftaudeenyusufbabatunde@gmail.com" class="hover:underline break-all">muftaudeenyusufbabatunde@gmail.com</a>
             </li>
             <li class="flex items-center hover:text-white transition-all duration-300">
-              <i class="fas fa-clock mr-3 text-blue-500"></i> <!-- Changed color -->
+              <i class="fas fa-clock mr-3 text-green-500"></i> <!-- Changed color -->
               <span>Mon–Fri: 9AM – 10PM</span>
             </li>
           </ul>
@@ -315,7 +315,7 @@
       </div>
 
       <div class="border-t border-gray-800 mt-12 pt-8 text-center text-base animate-fade-in">
-        <p>&copy; 2025 RenalGuard. Built with <span class="text-blue-500">💙</span> by Team VitalGuide of PROGRESS ICT MEDIA CONCEPTS LTD.</p> <!-- Updated name and heart color -->
+        <p>&copy; 2025 HepaGuard. Built with <span class="text-green-500">💚</span> by Team VitalGuard of PROGRESS ICT MEDIA CONCEPTS LTD.</p> <!-- Updated name and heart color -->
       </div>
     </div>
   </footer>
