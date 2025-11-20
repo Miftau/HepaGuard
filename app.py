@@ -1,10 +1,10 @@
 # app.py
 """
-CardioGuard Flask app (full).
+HepaGuard Flask application (full).
 Features:
- - Clinical & Lifestyle predictions (CSV or manual)
- - Heuristic condition inference & suggestions
- - AI chat endpoint (Groq preferred, OpenAI fallback)
+ - Liver Disease Risk Prediction (Clinical & Lifestyle models)
+ - Heuristic condition inference & suggestions for liver health
+ - AI chat endpoint (Groq preferred, OpenAI fallback) - Liver-focused
  - Optional Supabase chat-history persistence
  - Model auto-download from REMOTE_MODEL_BASE (if configured)
  - Health endpoint for uptime monitoring
@@ -12,17 +12,12 @@ Features:
  - Subscription management integrated into dashboards
  - Access control based on subscription plans
 Requirements (install in your venv):
-pip install flask pandas numpy scikit-learn joblib python-dotenv flask-mail requests supabase py-sdk-openai groq flask-cors
-Note: package names may vary slightly for groq or supabase clients; adjust to what you actually use:
- - supabase: "supabase" or "supabase-py" (depending on venv)
- - groq: "groq" (if you plan to use Groq)
- - openai: "openai" (fallback)
+pip install flask pandas numpy scikit-learn joblib python-dotenv flask-mail requests supabase py-sdk-openai groq flask-cors flask-limiter flask-migrate psycopg2-binary bcrypt cryptography pyjwt plotly markdown
+Note: package names might vary slightly (e.g., "supabase", "groq", "openai" - adjust to what you actually use/install).
 """
-
 # ============================================================
 # Imports & App Initialization
 # ============================================================
-
 import os
 import bcrypt
 import uuid
@@ -49,10 +44,8 @@ from plotly.utils import PlotlyJSONEncoder
 import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
-import shap
 import joblib
 from functools import wraps # For login_required decorator
-
 # Optional SDKs — imported inside try/except so app still runs without them
 try:
     from supabase import create_client as create_supabase_client
@@ -87,7 +80,7 @@ app.config.update(
     MAIL_USERNAME=os.getenv("MAIL_USERNAME"),
     MAIL_PASSWORD=os.getenv("MAIL_PASSWORD"),
     MAIL_DEFAULT_SENDER=(
-        os.getenv("MAIL_SENDER_NAME", "CardioGuard Contact"),
+        os.getenv("MAIL_SENDER_NAME", "HepaGuard Contact"),
         os.getenv("MAIL_USERNAME")
     ),
 )
@@ -100,7 +93,6 @@ def inject_now():
 # ============================================================
 # Custom Jinja2 Filters
 # ============================================================
-
 @app.template_filter('datetime_from_iso')
 def datetime_from_iso_filter(date_string):
     """Convert an ISO format date string (YYYY-MM-DDTHH:MM:SS.ssssss) to a datetime object."""
@@ -108,8 +100,6 @@ def datetime_from_iso_filter(date_string):
         return None
     try:
         # Handle different potential formats, e.g., with/without microseconds, with/without 'Z'
-        # The most common format from Supabase is YYYY-MM-DDTHH:MM:SS.ssssss+ZZ:ZZ
-        # But the basic YYYY-MM-DDTHH:MM:SS also occurs
         # datetime.fromisoformat() is quite robust for standard ISO formats
         return datetime.fromisoformat(date_string.replace('Z', '+00:00'))
     except ValueError:
@@ -128,21 +118,21 @@ def now_filter():
     """Return the current datetime object."""
     return datetime.now()
 
-
 # ============================================================
 # Configuration & Constants
 # ============================================================
-
 # Paths, model filenames & optional remote base
 RESULTS_DIR = os.path.join("static", "results")
 os.makedirs(RESULTS_DIR, exist_ok=True)
-CLINICAL_MODEL_FILE = os.getenv("CLINICAL_MODEL_FILE", "heart_rf_clinical.pkl")
-CLINICAL_SCALER_FILE = os.getenv("CLINICAL_SCALER_FILE", "heart_scaler_clinical.pkl")
-CLINICAL_TEMPLATE_FILE = os.getenv("CLINICAL_TEMPLATE_FILE", "heart_user_template_clinical.csv")
-LIFESTYLE_MODEL_FILE = os.getenv("LIFESTYLE_MODEL_FILE", "heart_rf_lifestyle.pkl")
-LIFESTYLE_SCALER_FILE = os.getenv("LIFESTYLE_SCALER_FILE", "heart_scaler_lifestyle.pkl")
-LIFESTYLE_TEMPLATE_FILE = os.getenv("LIFESTYLE_TEMPLATE_FILE", "heart_user_template_lifestyle.csv")
-REMOTE_MODEL_BASE = os.getenv("REMOTE_MODEL_BASE", "").rstrip("/")
+
+# --- HepaGuard Model & Preprocessing Files ---
+CLINICAL_MODEL_FILE = os.getenv("CLINICAL_MODEL_FILE", "hepaguard_rf_model_clinical.pkl")
+CLINICAL_PREPROCESSOR_FILE = os.getenv("CLINICAL_PREPROCESSOR_FILE", "hepaguard_preprocessor_clinical.pkl")
+
+LIFESTYLE_MODEL_FILE = os.getenv("LIFESTYLE_MODEL_FILE", "hepaguard_rf_model_general.pkl") # Changed to 'general' to match training script naming
+LIFESTYLE_PREPROCESSOR_FILE = os.getenv("LIFESTYLE_PREPROCESSOR_FILE", "hepaguard_preprocessor_general.pkl") # Changed to 'general'
+
+REMOTE_MODEL_BASE = os.getenv("REMOTE_MODEL_BASE", "").rstrip("/") # e.g., "https://your-server.com/models"
 
 # Optional Supabase (chat history persistence, auth)
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -180,102 +170,45 @@ elif use_openai:
 else:
     print("⚠️ No AI provider configured (GROQ or OpenAI). Chat endpoint will return an error unless keys installed.")
 
-# Input columns (forms)
-BASE_COLUMNS_CLINICAL = [
-    "age", "sex", "cp", "trestbps", "chol", "fbs", "restecg",
-    "thalach", "exang", "oldpeak", "slope", "ca", "thal"
+# --- Feature Columns (HepaGuard Specific) ---
+# These lists should match the *exact* column names used during training for each model *AND* the form input names.
+# CRITICAL: Update these lists based on the *features used during training* and *the names given to inputs in form.html*.
+# Clinical features: Example based on your training script output (adjust accordingly!)
+# Assuming your training script used: LBXALT, LBXAST, LBXPLTSI, LBXGLU, LBXGH, LBDHDD, LBXTCA, LBXTR
+FEATURES_LIVER_CLINICAL = [
+    'LBXALT', 'LBXAST', 'LBXPLTSI', 'LBXGLU', 'LBXGH', 'LBDHDD', 'LBXTCA', 'LBXTR'
 ]
-BASE_COLUMNS_LIFESTYLE = [
-    "age", "gender", "height", "weight", "ap_hi", "ap_lo",
-    "cholesterol", "gluc", "smoke", "alco", "active"
+# General/Lifestyle features: Example based on your training script output (adjust accordingly!)
+# Assuming your training script used: RIDAGEYR, RIAGENDR, RIDRETH3, DMDEDUC2, BMXBMI, BMXWAIST, SMQ020, SMQ040, ALQ130, DIQ010, BPQ020, MCQ160E
+FEATURES_LIVER_GENERAL = [
+    'RIDAGEYR', 'RIAGENDR', 'RIDRETH3', 'DMDEDUC2', 'BMXBMI', 'BMXWAIST',
+    'SMQ020', 'SMQ040', 'ALQ130', 'DIQ010', 'BPQ020', 'MCQ160E'
 ]
 
-# ============================================================
-# Virtual Meeting System (Jitsi) Helpers
-# ============================================================
+# Define target variable name and threshold used during training (or the definition logic used in training)
+TARGET_COLUMN_NAME = 'LIVER_HIGH_RISK_PROFILE' # Match the name created during training
+ALT_THRESHOLD_FOR_TARGET_DEFINITION = 40.0 # If target was defined based on ALT > 40 in training script
 
-def generate_jitsi_url(appointment_id, appointment_time_str):
-    """
-    Generates a unique Jitsi meeting URL based on appointment details.
-    Uses a deterministic hash to ensure the same appointment gets the same room.
-    """
-    # Create a unique identifier for the meeting room
-    # Combining appointment ID and time should be sufficient
-    unique_identifier = f"{appointment_id}_{appointment_time_str}"
-    # Use SHA-256 hash to create a deterministic, unique room name
-    room_hash = hashlib.sha256(unique_identifier.encode()).hexdigest()
-    # Truncate the hash for readability (e.g., first 12 characters)
-    room_name = room_hash[:12]
-    # Use a public Jitsi server or your own self-hosted one
-    jitsi_server = os.getenv("JITSI_SERVER_URL", "https://meet.jit.si") # e.g., "https://your-jitsi-instance.com"
-    return f"{jitsi_server}/{room_name}"
+# Other constants
+RANDOM_STATE = 42
+TEST_SIZE = 0.2
+CV_FOLDS = 5
 
 # ============================================================
-# Notification System (Email) Helpers
+# Model Loading & Helper Functions
 # ============================================================
 
-def send_appointment_reminder_email(appointment_id, user_email, user_name, doctor_name, appointment_time_str):
-    """
-    Sends an email reminder for an appointment.
-    """
-    try:
-        msg = Message(
-            subject="[CardioGuard] Appointment Reminder",
-            recipients=[user_email],
-            body=f"""
-            Dear {user_name},
-
-            This is a friendly reminder that you have an appointment scheduled with Dr. {doctor_name} on {appointment_time_str}.
-
-            Please ensure you are ready for the session.
-
-            Best regards,
-            The CardioGuard Team
-            """
-        )
-        mail.send(msg)
-        print(f"✅ Reminder email sent to {user_email} for appointment {appointment_id}")
-        # Optionally, log this to the 'notifications' table
-        supabase.table("notifications").insert({
-            "user_id": session.get("user_id"), # This might need adjustment if called outside a request context
-            "appointment_id": appointment_id,
-            "type": "appointment_reminder",
-            "message": f"Reminder for appointment with Dr. {doctor_name} on {appointment_time_str}",
-            "channel": "email",
-            "status": "sent"
-        }).execute()
-        return True
-    except Exception as e:
-        print(f"❌ Failed to send reminder email for appointment {appointment_id}: {e}")
-        # Optionally, log failure to the 'notifications' table
-        try:
-            supabase.table("notifications").insert({
-                "user_id": session.get("user_id"), # This might need adjustment if called outside a request context
-                "appointment_id": appointment_id,
-                "type": "appointment_reminder",
-                "message": f"Failed to send reminder for appointment with Dr. {doctor_name} on {appointment_time_str}",
-                "channel": "email",
-                "status": "failed",
-                "message": str(e) # Store error details
-            }).execute()
-        except Exception as log_e:
-            print(f"❌ Failed to log notification failure: {log_e}")
-        return False
-
-# ============================================================
-# Utility Functions
-# ============================================================
-
+# Ensure model files exist (auto-download if REMOTE_MODEL_BASE is set)
 def ensure_model_files(timeout=60):
     required = [
-        CLINICAL_MODEL_FILE, CLINICAL_SCALER_FILE, CLINICAL_TEMPLATE_FILE,
-        LIFESTYLE_MODEL_FILE, LIFESTYLE_SCALER_FILE, LIFESTYLE_TEMPLATE_FILE,
+        CLINICAL_MODEL_FILE, CLINICAL_PREPROCESSOR_FILE,
+        LIFESTYLE_MODEL_FILE, LIFESTYLE_PREPROCESSOR_FILE
     ]
     missing = [f for f in required if not os.path.exists(f)]
     if not missing:
         return
     if not REMOTE_MODEL_BASE:
-        raise FileNotFoundError(f"Missing model/template files: {missing}. Set REMOTE_MODEL_BASE to auto-download them.")
+        raise FileNotFoundError(f"Missing model/preprocessor files: {missing}. Set REMOTE_MODEL_BASE to auto-download them.")
 
     print("🛰️ Missing files detected:", missing)
     for fname in missing:
@@ -290,292 +223,212 @@ def ensure_model_files(timeout=60):
         except Exception as e:
             print("❌ failed to download", fname, e)
 
-# Load models & templates
-def load_models():
-    print("🔄 Loading models & templates...")
-    clinical_model = joblib.load(CLINICAL_MODEL_FILE)
-    clinical_scaler = joblib.load(CLINICAL_SCALER_FILE)
-    clinical_template_df = pd.read_csv(CLINICAL_TEMPLATE_FILE)
-    CLINICAL_FEATURE_COLUMNS = clinical_template_df.columns.tolist()
+ensure_model_files()
 
-    lifestyle_model = joblib.load(LIFESTYLE_MODEL_FILE)
-    lifestyle_scaler = joblib.load(LIFESTYLE_SCALER_FILE)
-    lifestyle_template_df = pd.read_csv(LIFESTYLE_TEMPLATE_FILE)
-    LIFESTYLE_FEATURE_COLUMNS = lifestyle_template_df.columns.tolist()
+# Load models & preprocessors
+def load_models_and_preprocessors():
+    print("🔄 Loading models & preprocessors...")
+    try:
+        clinical_model = joblib.load(CLINICAL_MODEL_FILE)
+        clinical_preprocessor = joblib.load(CLINICAL_PREPROCESSOR_FILE)
+        print("✅ Clinical model & preprocessor loaded")
 
-    print("✅ Models loaded")
-    return (clinical_model, clinical_scaler, CLINICAL_FEATURE_COLUMNS,
-            lifestyle_model, lifestyle_scaler, LIFESTYLE_FEATURE_COLUMNS)
+        lifestyle_model = joblib.load(LIFESTYLE_MODEL_FILE)
+        lifestyle_preprocessor = joblib.load(LIFESTYLE_PREPROCESSOR_FILE)
+        print("✅ Lifestyle model & preprocessor loaded")
 
-(
-    clinical_model, clinical_scaler, CLINICAL_FEATURE_COLUMNS,
-    lifestyle_model, lifestyle_scaler, LIFESTYLE_FEATURE_COLUMNS
-) = load_models()
+        return clinical_model, clinical_preprocessor, lifestyle_model, lifestyle_preprocessor
+    except Exception as e:
+        print(f"❌ Error loading models/preprocessors: {e}")
+        raise
 
+clinical_model, clinical_preprocessor, lifestyle_model, lifestyle_preprocessor = load_models_and_preprocessors()
 
-# Prediction helper (clinical & lifestyle) 
-def prepare_and_predict(df_raw: pd.DataFrame, model_type: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
+# Prediction helper (clinical & lifestyle) - Adapted for HepaGuard Models
+def prepare_and_predict(df_raw: pd.DataFrame, model_type: str):
+    """
+    Prepares input data and makes a prediction using the specified model.
+
+    Args:
+        df_raw (pd.DataFrame): Raw input data (e.g., from form or CSV).
+        model_type (str): 'clinical' or 'lifestyle'.
+
+    Returns:
+        pd.DataFrame: DataFrame containing input data, prediction, probability, and risk level.
+    """
     if model_type not in ("clinical", "lifestyle"):
         raise ValueError("Invalid model_type")
 
     df = df_raw.copy()
+
     # If headerless (pandas will provide integer column names), map positional columns
+    # This part might need adjustment based on how you plan to pass data
+    # For now, assume headers exist matching training features
     if all(isinstance(c, int) for c in df.columns):
         if model_type == "clinical":
-            df = df.iloc[:, :len(BASE_COLUMNS_CLINICAL)]
-            df.columns = BASE_COLUMNS_CLINICAL[:df.shape[1]]
-        else:
-            df = df.iloc[:, :len(BASE_COLUMNS_LIFESTYLE)]
-            df.columns = BASE_COLUMNS_LIFESTYLE[:df.shape[1]]
+            df = df.iloc[:, :len(FEATURES_LIVER_CLINICAL)]
+            df.columns = FEATURES_LIVER_CLINICAL[:df.shape[1]]
+        else: # lifestyle
+            df = df.iloc[:, :len(FEATURES_LIVER_GENERAL)]
+            df.columns = FEATURES_LIVER_GENERAL[:df.shape[1]]
 
-    # Store raw features *before* scaling for SHAP
-    raw_features_df = df.copy()
-
-    # Clinical pipeline: one-hot align with CLINICAL_FEATURE_COLUMNS then scale
+    # Select features based on model type
     if model_type == "clinical":
-        cat_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
-        df_enc = pd.get_dummies(df, columns=cat_cols)
-        df_enc = df_enc.reindex(columns=CLINICAL_FEATURE_COLUMNS, fill_value=0)
-        X = clinical_scaler.transform(df_enc.values)
+        feature_columns = FEATURES_LIVER_CLINICAL
         model = clinical_model
-        # Ensure raw_features_df aligns with CLINICAL_FEATURE_COLUMNS as well for SHAP (after dummies)
-        raw_features_df = pd.get_dummies(raw_features_df, columns=cat_cols)
-        raw_features_df = raw_features_df.reindex(columns=CLINICAL_FEATURE_COLUMNS, fill_value=0)
-    else:
-        # Lifestyle pipeline: ensure numeric & fillna then align
-        for col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-        df = df.fillna(df.mean(numeric_only=True))
-        df_enc = df.reindex(columns=LIFESTYLE_FEATURE_COLUMNS, fill_value=0)
-        X = lifestyle_scaler.transform(df_enc.values)
+        preprocessor = clinical_preprocessor
+    else: # lifestyle
+        feature_columns = FEATURES_LIVER_GENERAL
         model = lifestyle_model
-        # Ensure raw_features_df aligns with LIFESTYLE_FEATURE_COLUMNS for SHAP
-        for col in raw_features_df.columns:
-             raw_features_df[col] = pd.to_numeric(raw_features_df[col], errors="coerce")
-        raw_features_df = raw_features_df.fillna(raw_features_df.mean(numeric_only=True))
-        raw_features_df = raw_features_df.reindex(columns=LIFESTYLE_FEATURE_COLUMNS, fill_value=0)
+        preprocessor = lifestyle_preprocessor
 
-    # predict probabilities & classes
+    # Ensure all required features are present in the input DataFrame
+    # Fill missing features with a default value (e.g., 0 for numerical, 'missing' for categorical)
+    # It's better if the form ensures all features are collected.
+    X_input_for_model = df.reindex(columns=feature_columns, fill_value=0) # Fill missing features with 0 as a default strategy
+
+    # Apply the PRE-FITTED preprocessing pipeline loaded from training
+    X_processed = preprocessor.transform(X_input_for_model)
+
+    # --- Prediction ---
+    df_out_base = df.copy() # Keep original input for output (before selecting model features)
     if hasattr(model, "predict_proba"):
-        probs = model.predict_proba(X)[:, 1]
+        probs = model.predict_proba(X_processed)[:, 1] # Probability of positive class (disease/high risk)
     else:
         # fallback - sigmoid of decision_function if available
         try:
-            df_dec = model.decision_function(X)
+            df_dec = model.decision_function(X_processed)
             probs = 1.0 / (1.0 + np.exp(-df_dec))
         except Exception:
-            probs = model.predict(X).astype(float)  # last resort
+            probs = model.predict(X_processed).astype(float)  # last resort
 
-    preds = model.predict(X)
+    preds = model.predict(X_processed)
 
-    # Build output
-    out_df = df_raw.copy() # Use original raw input for display
-    out_df["Prediction"] = preds
-    out_df["Prob_Pos"] = np.round(probs, 4)
+    # Build output DataFrame
+    # Use the original df (before selecting model features) to preserve all form inputs for output
+    out_df = df_out_base.copy()
+    out_df["Prediction"] = preds # 0 or 1
+    out_df["Prob_Pos"] = np.round(probs, 4) # Probability of having the condition/high risk
     out_df["Risk_Level"] = out_df["Prob_Pos"].apply(lambda p: "High" if p > 0.66 else ("Medium" if p > 0.33 else "Low"))
+    return out_df
 
-    # Return both results and raw features for SHAP
-    return out_df, raw_features_df
-
-
-# NEW: Function to generate SHAP explanation
-def generate_shap_explanation(raw_features_df_row, model, feature_names):
+# Heuristic diagnostic rules (HepaGuard-specific)
+def get_likely_liver_condition(
+    age=None, bmi=None, alt=None, ast=None, platelets=None, ggt=None, bilirubin=None,
+    glucose=None, hba1c=None, systolic_bp=None, diastolic_bp=None,
+    hdl_cholesterol=None, total_cholesterol=None, triglycerides=None,
+    diabetes_status=None, hypertension_status=None, smoking_status=None,
+    alcohol_status=None, family_history_liver=None
+):
     """
-    Calculates SHAP values for a single prediction row.
-    Returns a dictionary containing feature names and their SHAP values.
+    Provides a heuristic suggestion for a likely liver condition based on input parameters.
+    This is NOT a medical diagnosis, just a rule-based inference for informational purposes.
     """
-    try:
-        import numpy as np # Ensure numpy is available
-
-        # Ensure the input is a single row DataFrame (shape (1, n_features))
-        if raw_features_df_row.shape[0] != 1:
-             print(f"Warning: Expected 1 row for SHAP, got {raw_features_df_row.shape[0]}. Taking first row.")
-             raw_features_df_row = raw_features_df_row.iloc[[0]] # Make sure it's still a DataFrame
-
-        # Get the underlying numpy array for the explainer
-        # Use .values to get the raw numerical array
-        input_array = raw_features_df_row.values
-
-        # Create an explainer object for the specific model type
-        # TreeExplainer is efficient for tree-based models like Random Forest
-        explainer = shap.TreeExplainer(model)
-
-        # Calculate SHAP values for the specific input array
-        # Pass the numpy array directly
-        shap_values_raw = explainer.shap_values(input_array)
-
-        # --- Handle potential list structure for multi-output models (like RandomForestClassifier for binary classification) ---
-        # shap_values_raw might be a list of arrays for each class [class_0_values, class_1_values] for binary classification
-        # or a single array if the model outputs probability for positive class directly or is single-output.
-        # We typically want the SHAP values corresponding to the positive class (or the output used for probability).
-        # For RandomForestClassifier.predict_proba(X)[:, 1], we usually want the SHAP values for class 1.
-
-        if isinstance(shap_values_raw, list):
-            # It's a list, likely [shap_values_class_0, shap_values_class_1] for binary classification
-            if len(shap_values_raw) == 2:
-                 # Assume index 1 corresponds to the positive class (probability output for class 1)
-                 shap_values_for_output = shap_values_raw[1] # Take values for the positive class
-            elif len(shap_values_raw) == 1:
-                 # Only one class output, use that
-                 shap_values_for_output = shap_values_raw[0]
-            else:
-                 # Unexpected number of outputs
-                 print(f"Warning: SHAP returned {len(shap_values_raw)} lists, expected 1 or 2. Using the first.")
-                 shap_values_for_output = shap_values_raw[0]
-        else:
-            # It's a single array (e.g., from a regressor or a classifier configured differently)
-            shap_values_for_output = shap_values_raw
-
-        # Ensure shap_values_for_output is a 1D array corresponding to features of the single input row
-        # It should have shape (n_features,) after indexing the correct class if needed
-        if shap_values_for_output.ndim > 1:
-            # If it's still multi-dimensional (e.g., (1, n_features)), squeeze it to (n_features,)
-            shap_values_for_output = shap_values_for_output.squeeze(axis=0) # Remove the batch dimension
-            if shap_values_for_output.ndim != 1:
-                 print(f"Warning: SHAP output shape {shap_values_for_output.shape} is unexpected after squeeze. Attempting to flatten.")
-                 shap_values_for_output = shap_values_for_output.flatten() # Fallback to flatten if still wrong shape
-
-        # At this point, shap_values_for_output should be a 1D numpy array of length n_features
-        # Convert to a list for JSON serialization
-        shap_values_list = shap_values_for_output.tolist()
-        feature_names_list = feature_names # This should be the list of feature names corresponding to the columns used for the model
-
-        if len(shap_values_list) != len(feature_names_list):
-             print(f"Warning: SHAP values length ({len(shap_values_list)}) does not match feature names length ({len(feature_names_list)}).")
-             # This might happen if the feature alignment failed somewhere. Proceed carefully or return empty.
-             # For now, let's assume they align correctly based on the model's training feature order.
-             # If lengths differ significantly, the explanation might be misleading.
-
-        # Create a list of dictionaries for easier handling in the template
-        shap_explanation = [
-            {"feature": feat, "shap_value": val}
-            for feat, val in zip(feature_names_list, shap_values_list)
-        ]
-
-        # Sort by absolute SHAP value to show most impactful features first
-        shap_explanation.sort(key=lambda x: abs(x["shap_value"]), reverse=True)
-
-        return shap_explanation
-
-    except Exception as e:
-        print(f"Error generating SHAP explanation: {e}")
-        import traceback
-        traceback.print_exc() # Print full traceback for debugging
-        return [] # Return an empty list if explanation fails
-
-
-
-# Heuristic diagnostic rules (your rules, expanded)
-def get_likely_condition(
-    age, cholesterol, resting_bp, max_heart_rate,
-    fasting_blood_sugar=None, exercise_angina=None,
-    chest_pain_type=None, oldpeak=None, st_slope=None,
-    sex=None, smoking=None, obesity=None,
-    alcohol=None, physical_activity=None
-) -> Tuple[str, List[str]]:
-    """Return (likely_condition, suggestions) based on simple heuristic rules."""
-    likely_condition = "Generalized Cardiac Risk"
-    suggestions: List[str] = []
-
-    # normalize
-    def to_float(v, default=0.0):
+    # Normalize inputs to floats/integers where applicable, handle missing values
+    def to_float(v, default=np.nan):
         try:
             return float(v)
-        except Exception:
+        except (ValueError, TypeError):
             return default
 
-    age_v = to_float(age, 0)
-    chol_v = to_float(cholesterol, 0)
-    bp_v = to_float(resting_bp, 0)
-    mhr_v = to_float(max_heart_rate, 0)
-    old_v = to_float(oldpeak, 0)
-    fbs_v = to_float(fasting_blood_sugar, 0)
+    age_v = to_float(age)
+    bmi_v = to_float(bmi)
+    alt_v = to_float(alt)
+    ast_v = to_float(ast)
+    plt_v = to_float(platelets)
+    ggt_v = to_float(ggt)
+    bili_v = to_float(bilirubin)
+    glu_v = to_float(glucose)
+    hba1c_v = to_float(hba1c)
+    sbp_v = to_float(systolic_bp)
+    dbp_v = to_float(diastolic_bp)
+    hdl_v = to_float(hdl_cholesterol)
+    tchol_v = to_float(total_cholesterol)
+    trigs_v = to_float(triglycerides)
 
-    # normalize some categorical inputs to lowercase strings for matching
-    smoking_s = str(smoking).strip().lower() if smoking is not None else ""
-    alcohol_s = str(alcohol).strip().lower() if alcohol is not None else ""
-    physical_activity_s = str(physical_activity).strip().lower() if physical_activity is not None else ""
-    st_slope_s = str(st_slope).strip().lower() if st_slope is not None else ""
+    # Normalize categorical inputs to lowercase strings for matching
+    diabetes_s = str(diabetes_status).strip().lower() if diabetes_status is not None else ""
+    hypertension_s = str(hypertension_status).strip().lower() if hypertension_status is not None else ""
+    smoking_s = str(smoking_status).strip().lower() if smoking_status is not None else ""
+    alcohol_s = str(alcohol_status).strip().lower() if alcohol_status is not None else ""
+    family_hist_s = str(family_history_liver).strip().lower() if family_history_liver is not None else ""
 
-    # Rule set (ordered — earlier matches stronger)
-    if (
-        (chol_v > 240 and bp_v > 140)
-        or st_slope_s in {"down", "downsloping", "2"}
-        or old_v > 2.0
-    ):
-        likely_condition = "Coronary Artery Disease (CAD)"
+    # --- Rule Set (Ordered - earlier matches take precedence) ---
+    # Criteria often involve combinations of biomarkers and risk factors
+
+    # 1. Acute Liver Injury (e.g., Drug-induced, Viral Hepatitis - High ALT/AST)
+    if pd.notna(alt_v) and alt_v > 100 and pd.notna(ast_v) and ast_v > 100: # Very high levels suggest acute injury
+        likely_condition = "Acute Liver Injury (Very High ALT/AST)"
         suggestions = [
-            "Adopt a low-fat, high-fiber diet and reduce saturated fats.",
-            "Ask your physician about coronary CT angiography or stress testing.",
-            "Start supervised, low-to-moderate intensity cardiovascular exercise."
+            "Seek immediate medical attention. Very high ALT/AST levels require urgent evaluation.",
+            "List all medications, supplements, and potential toxin exposures for your doctor.",
+            "Tests for viral hepatitis (HAV, HBV, HCV) might be needed."
         ]
-    elif (mhr_v < 100 and age_v > 60) or (old_v > 1.5 and bp_v > 130):
-        likely_condition = "Heart Failure (HF) — possible reduced cardiac output"
+    # 2. Chronic Liver Disease (e.g., NASH/NAFLD - Metabolic Risk Factors + Mild-Moderate Enzyme Elevation)
+    elif (bmi_v > 30 or glu_v > 140 or hba1c_v > 6.5 or trigs_v > 200) and \
+         pd.notna(alt_v) and alt_v > 35 and pd.notna(ast_v) and ast_v > 30: # Metabolic risk + mildly elevated ALT/AST (thresholds might differ)
+        likely_condition = "Likely Metabolic Dysfunction-Associated Steatohepatitis (MASH)/NAFLD"
         suggestions = [
-            "Monitor weight daily and report rapid gains (>2kg in 2 days).",
-            "Request an echocardiogram (echo) to evaluate ejection fraction.",
-            "Limit high-intensity exertion until evaluated."
+            "Consult a gastroenterologist or hepatologist for further evaluation (e.g., FibroScan, MRI-PDFF).",
+            "Focus on weight loss through diet and exercise (even 5-10% can help).",
+            "Aggressively manage blood sugar, cholesterol, and triglycerides.",
+            "Avoid alcohol completely."
         ]
-    elif fbs_v > 120 and chol_v > 200:
-        likely_condition = "Diabetic Cardiomyopathy risk"
+    # 3. Alcoholic Liver Disease (High GGT, Risk Factors)
+    elif alcohol_s in ["1", "yes", "true", "y"] and pd.notna(ggt_v) and ggt_v > 100: # High GGT + Alcohol use
+        likely_condition = "Likely Alcoholic Liver Disease"
         suggestions = [
-            "Tight glycemic control and diet to lower fasting blood sugar.",
-            "Get regular ECG and consider echocardiography.",
-            "Coordinate care with an endocrinologist and cardiologist."
+            "Complete abstinence from alcohol is crucial.",
+            "Consult a liver specialist for assessment and support.",
+            "Address nutritional deficiencies common in alcohol use disorder."
         ]
-    elif mhr_v > 180 or (exercise_angina in [1, "1", "yes", "true"] and mhr_v > 150):
-        likely_condition = "Suspected Arrhythmia / Tachycardia"
+    # 4. Chronic Liver Disease (e.g., Cirrhosis - Low Platelets + Risk Factors)
+    elif pd.notna(plt_v) and plt_v < 150 and (bmi_v > 25 or diabetes_s in ["1", "yes"] or family_hist_s in ["1", "yes"]): # Low platelets + metabolic risk
+        likely_condition = "Possible Chronic Liver Disease/Cirrhosis (Low Platelets + Risk Factors)"
         suggestions = [
-            "Avoid stimulants (caffeine, amphetamines) and alcohol.",
-            "Consider ECG, ambulatory Holter monitor or event recorder.",
-            "If palpitations are associated with syncope, seek urgent care."
+            "Urgent consultation with a hepatologist is recommended.",
+            "Evaluation for portal hypertension and varices might be needed.",
+            "Further imaging (Ultrasound, CT, MRI) and fibrosis scores (APRI, FIB-4) are indicated."
         ]
-    elif bp_v >= 160 and age_v > 40:
-        likely_condition = "Hypertensive Heart Disease"
+    # 5. Gilbert's Syndrome (Isolated High Bilirubin)
+    elif pd.notna(bili_v) and bili_v > 3.0 and pd.isna(alt_v): # Isolated high bilirubin, ALT not elevated
+        likely_condition = "Possible Gilbert's Syndrome (Benign Bilirubin Elevation)"
         suggestions = [
-            "Start/optimize antihypertensive therapy as advised by your clinician.",
-            "Daily BP monitoring and salt restriction are recommended.",
-            "Evaluate with echocardiography for left ventricular hypertrophy."
+            "Often benign, but confirm with a doctor.",
+            "Usually doesn't require specific treatment, but monitor bilirubin levels.",
+            "Inform other healthcare providers about this condition."
         ]
-    elif smoking_s in {"1", "yes", "true", "y"} and chol_v > 200:
-        likely_condition = "Smoking-related coronary risk"
+    # 6. General Risk (Metabolic Syndrome, Diabetes)
+    elif bmi_v > 35 or glu_v > 200 or hba1c_v > 8.0:
+        likely_condition = "High Risk for Liver Disease (Metabolic Factors)"
         suggestions = [
-            "Immediate smoking cessation; consider pharmacotherapy (NRT, varenicline).",
-            "Full lipid profile and stress testing if symptomatic.",
-            "Lifestyle changes: exercise, diet, and smoking cessation programs."
+            "Significant metabolic risk factors present.",
+            "Focus on lifestyle changes: weight loss, healthy diet, regular exercise.",
+            "Monitor liver enzymes regularly.",
+            "Consult your doctor about managing diabetes and obesity."
         ]
-    elif alcohol_s in {"1", "yes", "true", "y"} and age_v > 35:
-        likely_condition = "Alcohol-related cardiomyopathy risk"
+    # 7. Normal Range (Low Risk Profile)
+    elif (pd.isna(alt_v) or alt_v <= 40) and (pd.isna(ast_v) or ast_v <= 35) and \
+         (pd.isna(ggt_v) or ggt_v <= 60) and (pd.isna(bili_v) or bili_v <= 1.2) and \
+         bmi_v < 25 and glu_v < 100 and hba1c_v < 5.7:
+        likely_condition = "Low Risk Profile for Liver Disease"
         suggestions = [
-            "Strict alcohol abstinence and clinical Cardio follow-up.",
-            "Check liver function and vitamin B/thiamine levels.",
-            "Consider echocardiogram and cardiology referral."
+            "Maintain your current healthy habits.",
+            "Continue regular checkups.",
+            "Avoid excessive alcohol and unnecessary medications."
         ]
-    elif (
-        obesity in ["1", "yes", "true", "y"]
-        or physical_activity_s in {"low", "none", "0"}
-        and float(bp_v) > 130
-    ):
-        likely_condition = "Obesity-related cardiometabolic risk"
-        suggestions = [
-            "Structured weight-loss program and increased physical activity.",
-            "Dietary counseling and consider referral to nutritionist.",
-            "Check for sleep apnea if obese; treat if present."
-        ]
-    elif (chol_v < 200 and bp_v < 120 and fbs_v < 100):
-        likely_condition = "Low Cardiac Risk"
-        suggestions = [
-            "Maintain a balanced diet and regular exercise.",
-            "Annual routine checkup and continue healthy lifestyle."
-        ]
+    # 8. Default (Generalized Risk if no strong rule matches)
     else:
-        likely_condition = "Generalized Cardiac Risk"
+        likely_condition = "Generalized Liver Risk"
         suggestions = [
-            "Discuss results with your primary care clinician.",
-            "Consider targeted tests (lipid panel, ECG, echo) if concerned."
+            "Multiple factors contribute to liver health.",
+            "Consider discussing your results with a healthcare provider.",
+            "Focus on a balanced diet, regular exercise, and limiting alcohol.",
+            "Review medications with your doctor for potential liver impact."
         ]
 
     return likely_condition, suggestions
+
 
 # Chat helpers (Groq / OpenAI) + Supabase persistence
 def save_chat_message(user_id: str, role: str, message: str):
@@ -588,7 +441,7 @@ def save_chat_message(user_id: str, role: str, message: str):
             }).execute()
         except Exception as e:
             # don't fail the whole request because of DB issues
-            print("⚠️ Supabase insert failed:", e)
+            print(f"⚠️ Supabase insert failed: {e}")
 
 def call_groq_chat(user_message: str, system_prompt: Optional[str] = None) -> str:
     # Minimal Groq chat usage - adjust to your groq SDK version
@@ -599,9 +452,8 @@ def call_groq_chat(user_message: str, system_prompt: Optional[str] = None) -> st
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": user_message})
-
         response = groq_client.chat.completions.create(
-            model=os.getenv("GROQ_MODEL", "llama3-13b"),  # choose desired model
+            model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"), # free + hosted
             messages=messages,
             temperature=float(os.getenv("GROQ_TEMPERATURE", 0.7)),
             max_tokens=int(os.getenv("GROQ_MAX_TOKENS", 512)),
@@ -621,7 +473,6 @@ def call_openai_chat(user_message: str, system_prompt: Optional[str] = None) -> 
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": user_message})
-
         resp = openai.ChatCompletion.create(
             model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
             messages=messages,
@@ -642,7 +493,6 @@ def login_required(f):
             return redirect(url_for("login"))
         return f(*args, **kwargs)
     return decorated_function
-
 
 def get_user_role(user_id):
     """Helper to fetch user role from Supabase.
@@ -686,7 +536,6 @@ def get_user_role(user_id):
     print(f"User {user_id} not found in any role table ('users', 'doctors', 'admins'). Assigning default role 'user'.")
     return "user"
 
-
 def get_user_subscription_status(user_id):
     """
     Helper to fetch user's current subscription status from Supabase.
@@ -702,13 +551,12 @@ def get_user_subscription_status(user_id):
         # Step 2: For normal users, fetch actual subscription
         subs_data = (
             supabase.table("user_subscriptions")
-            .select("status, subscription_plans(name, is_free)")
+            .select("status, subscription_plans(is_free)")
             .eq("user_id", user_id)
             .neq("status", "cancelled")
             .order("start_date", desc=True)
             .execute()
         )
-        
         if subs_data.data:
             latest_sub = subs_data.data[0]
             plan_info = latest_sub.get("subscription_plans", {})
@@ -717,13 +565,10 @@ def get_user_subscription_status(user_id):
         else:
             # No active subscriptions found, default to free
             return "inactive", True
-
     except Exception as e:
         print(f"Error fetching subscription for user {user_id}: {e}")
         # Default to safest option (free/restricted)
         return "inactive", True
-
-
 
 def handle_supabase_auth_session(session_data):
     """
@@ -764,8 +609,8 @@ def handle_supabase_auth_session(session_data):
     # Check 'users' table if role is still default
     # This also ensures the user profile exists in the 'users' table if needed for other data
     if role == "user":
-        user_meta = supabase.table("users").select("*").eq("id", user_id).execute().data
-        if not user_meta:
+        user_meta = supabase.table("users").select("*").eq("id", user_id).single().execute()
+        if not user_meta.data:
             # First-time user (or user not in 'users' table but defaulting to 'user' role): create profile
             # This assumes the user should exist in the 'users' table regardless of their primary role for general data.
             try:
@@ -776,11 +621,11 @@ def handle_supabase_auth_session(session_data):
                     "role": "user" # The role here might be less critical if determined above, but set for consistency
                 }).execute()
                 # Fetch the data back to ensure we have it
-                user_meta = [{"id": user_id, "role": "user", "name": user_name, "email": email}]
+                user_meta = supabase.table("users").select("*").eq("id", user_id).single().execute().data
             except Exception as e:
                 print(f"Error creating user profile in 'users' table for {user_id}: {e}")
                 # If creation fails, we might not have user details, but we have the role determined above
-                user_meta = [{"id": user_id, "role": role, "name": user_name, "email": email}]
+                user_meta = {"id": user_id, "role": role, "name": user_name, "email": email}
         else:
             # User exists in 'users' table, potentially update name/email if changed in auth
             # Or just use the data fetched
@@ -794,7 +639,7 @@ def handle_supabase_auth_session(session_data):
     # Optionally, store email if needed elsewhere
     session["user_email"] = email
 
-# Access Control Decorators
+# Access Control Decorator
 def check_subscription_access(f):
     """
     Decorator to check if the user has access to restricted features based on their subscription.
@@ -818,7 +663,7 @@ def check_subscription_access(f):
             elif request.endpoint in ['chat', 'book_appointment']:
                 flash("Please log in to access this feature.", "warning")
                 return redirect(url_for('login'))
-            # Allow access to the decorated function
+            # Allow access to the decorated function (e.g., for /form if limit not reached)
             return f(*args, **kwargs)
 
         # User is logged in, fetch subscription status
@@ -832,6 +677,7 @@ def check_subscription_access(f):
         if not is_free_plan and sub_status == "active":
             # Paid subscriber, allow access
             return f(*args, **kwargs)
+
         # Free subscriber or no active subscription
         if request.endpoint == 'predict':
             # Check usage limit for /form
@@ -850,13 +696,10 @@ def check_subscription_access(f):
             # Restrict chat and booking for free users
             flash("This feature is available for paid subscribers only.", "warning")
             return redirect(url_for('user_dashboard'))
+
         # Allow access to the decorated function (e.g., for /form if limit not reached)
         return f(*args, **kwargs)
-
     return decorated_function
-
-# ensure files on startup
-ensure_model_files()
 
 # ============================================================
 # Routes - Authentication
@@ -877,7 +720,7 @@ def register():
         # Check if user exists
         try:
             existing = supabase.table("users").select("id, email").eq("email", email).execute()
-            if existing and existing.data:
+            if existing.data:
                 flash("Email already registered. Try logging in.", "warning")
                 return redirect(url_for("login"))
         except Exception as e:
@@ -910,7 +753,7 @@ def register():
                 if user_id:
                     supabase.table("doctors").insert({
                         "user_id": user_id,
-                        "specialization": request.form.get("specialization", "General Cardiology"),
+                        "specialization": request.form.get("specialization", "General Nephrology"), # Adjust specialization field name if needed
                         "bio": request.form.get("bio", ""),
                         "consultation_fee": float(request.form.get("consultation_fee", 0))
                     }).execute()
@@ -919,7 +762,6 @@ def register():
 
         flash("Account created successfully. Please log in.", "success")
         return redirect(url_for("login"))
-
     # GET
     return render_template("register.html")
 
@@ -936,169 +778,116 @@ def login():
         # ---- STEP 1: Check Users Table ----
         try:
             user_resp = supabase.table("users").select("*").eq("email", email).limit(1).execute()
+            if user_resp.data:
+                user = user_resp.data[0]
+                stored_hash = user.get("password_hash")
+                if stored_hash:
+                    try:
+                        if bcrypt.checkpw(password.encode("utf-8"), stored_hash.encode("utf-8")):
+                            handle_supabase_auth_session(user) # Process session and set Flask session
+                            flash("Welcome back!", "success")
+                            role = session["role"]
+                            if role == "admin":
+                                return redirect(url_for("admin_dashboard"))
+                            elif role == "doctor":
+                                return redirect(url_for("doctor_dashboard"))
+                            else:
+                                return redirect(url_for("user_dashboard"))
+                    except ValueError as e:
+                        print("Password hash error:", e)
+                        flash("Error verifying credentials. Contact support.", "danger")
+                        return redirect(url_for("login"))
         except Exception as e:
             print("Supabase user query error:", e)
             flash("Login temporarily unavailable. Please try again later.", "danger")
             return redirect(url_for("login"))
 
-        if user_resp and user_resp.data:
-            user = user_resp.data[0]
-            stored_hash = user.get("password_hash")
-
-            if stored_hash:
-                try:
-                    if bcrypt.checkpw(password.encode("utf-8"), stored_hash.encode("utf-8")):
-                        session.clear()
-                        session["user_id"] = user.get("id")
-                        session["user_name"] = user.get("name")
-
-                        # --- STEP 1A: Detect Role ---
-                        # Default role is 'user', unless doctor or admin
-                        role = user.get("role", "user")
-
-                        # If not admin, check if this user is a doctor
-                        if role != "admin":
-                            doctor_check = supabase.table("doctors").select("id").eq("id", user["id"]).execute()
-                            if doctor_check.data:
-                                role = "doctor"
-                                session["doctor_id"] = doctor_check.data[0]["id"]
-
-                        session["role"] = role
-
-                        # --- STEP 1B: Redirect Based on Role ---
-                        if role == "admin":
-                            flash("Welcome back, Admin!", "success")
-                            return redirect(url_for("admin_dashboard"))
-                        elif role == "doctor":
-                            flash("Welcome Doctor!", "success")
-                            return redirect(url_for("doctor_dashboard"))
-                        else:
-                            flash("Welcome back!", "success")
-                            return redirect(url_for("user_dashboard"))
-
-                except ValueError as e:
-                    print("Password hash error:", e)
-                    flash("Error verifying credentials. Contact support.", "danger")
-                    return redirect(url_for("login"))
-
         # ---- STEP 2: Check Admins Table (Fallback) ----
         try:
             admin_resp = supabase.table("admins").select("*").eq("email", email).limit(1).execute()
-            if admin_resp and admin_resp.data:
+            if admin_resp.data:
                 admin = admin_resp.data[0]
                 stored_hash = admin.get("password_hash")
-
-                if stored_hash and bcrypt.checkpw(password.encode("utf-8"), stored_hash.encode("utf-8")):
-                    session.clear()
-                    session["user_id"] = admin.get("id")
-                    session["role"] = "admin"
-                    session["user_name"] = admin.get("name")
-                    flash("Welcome back, Admin!", "success")
-                    return redirect(url_for("admin_dashboard"))
+                if stored_hash:
+                    try:
+                        if bcrypt.checkpw(password.encode("utf-8"), stored_hash.encode("utf-8")):
+                            handle_supabase_auth_session(admin) # Process session and set Flask session (role override might be needed)
+                            session["role"] = "admin" # Explicitly set role for admin
+                            flash("Welcome back, Admin!", "success")
+                            return redirect(url_for("admin_dashboard"))
+                    except ValueError as e:
+                        print("Admin password hash error:", e)
+                        flash("Error verifying admin credentials. Contact support.", "danger")
+                        return redirect(url_for("login"))
         except Exception as e:
-            print("Supabase admin lookup error:", e)
+            print("Supabase admin query error:", e)
+            # If admin lookup fails, fall through to generic error
 
         flash("Invalid email or password.", "danger")
         return redirect(url_for("login"))
-
-    return render_template("login.html")
-
-
     # GET
     return render_template("login.html")
 
 @app.route("/logout")
 def logout():
-    supabase.auth.sign_out() # Sign out from Supabase
-    session.pop("user_id", None)
-    session.pop("role", None)
-    session.pop("user_name", None)
-    session.pop("user_email", None) # Clear email
+    session.clear()
     flash("Logged out successfully.")
     return redirect(url_for("login"))
 
-# --- Social Login Routes ---
+# --- Social Login Routes (Placeholder) ---
 @app.route("/auth/<provider>")
 def social_login(provider):
-    providers = {"google", "facebook", "github"}
-    if provider not in providers:
-        flash("Unsupported provider", "danger")
-        return redirect(url_for("login"))
-    redirect_url = url_for("auth_callback", provider=provider, _external=True)
-    # Supabase OAuth URL
-    auth_url = f"{SUPABASE_URL}/auth/v1/authorize?provider={provider}&redirect_to={redirect_url}"
+    # Placeholder for OAuth logic using Supabase
+    # Construct the Supabase auth URL for the provider
+    redirect_uri = url_for("auth_callback", provider=provider, _external=True)
+    auth_url = f"{SUPABASE_URL}/auth/v1/authorize?provider={provider}&redirect_to={redirect_uri}"
     return redirect(auth_url)
 
 @app.route("/auth/callback/<provider>")
 def auth_callback(provider):
+    # Handle the callback from Supabase after OAuth
     code = request.args.get("code")
     if not code:
-        flash("Authentication failed", "danger")
+        flash("Authentication failed.", "danger")
         return redirect(url_for("login"))
 
-    # Exchange code for session
-    res = requests.post(
-        f"{SUPABASE_URL}/auth/v1/token?grant_type=authorization_code",
-        json={"code": code, "redirect_uri": url_for("auth_callback", provider=provider, _external=True)},
-        headers={"apikey": SUPABASE_KEY, "Content-Type": "application/json"}
-    )
-    data = res.json()
-    if "access_token" not in data:
-        flash("Login failed", "danger")
-        return redirect(url_for("login"))
+    # Exchange code for session (similar to manual login)
+    # This part involves calling the Supabase API with the code
+    # For brevity, refer to Supabase documentation for the exact token exchange call
+    # Example (conceptual):
+    # token_url = f"{SUPABASE_URL}/auth/v1/token?grant_type=authorization_code"
+    # payload = {"code": code, "redirect_uri": redirect_uri}
+    # headers = {"apikey": SUPABASE_KEY, "Content-Type": "application/json"}
+    # response = requests.post(token_url, json=payload, headers=headers)
+    # session_data = response.json()
+    # if "access_token" in session_data:
+    #     handle_supabase_auth_session(session_data)
+    #     flash("Signed in successfully!", "success")
+    #     return redirect(url_for("dashboard")) # Redirect based on role
+    # else:
+    #     flash("OAuth login failed.", "danger")
+    #     return redirect(url_for("login"))
 
-    handle_supabase_auth_session(data) # Process session and set Flask session
-
-    flash("Signed in successfully!", "success")
-    role = session["role"]
-    if role == "admin":
-        return redirect(url_for("admin_dashboard"))
-    elif role == "doctor":
-        return redirect(url_for("doctor_dashboard"))
-    else:
-        return redirect(url_for("user_dashboard"))
+    # For now, redirect to login
+    flash("Social login not fully implemented yet.", "info")
+    return redirect(url_for("login"))
 
 # ============================================================
-# Routes - Main UI Pages
+# Routes - Main UI Pages (Adjusted for HepaGuard)
 # ============================================================
+
+# --- Removed /about, /contact, /resources ---
 
 @app.route("/")
 def index():
-    return render_template("index.html")
-
-@app.route("/about")
-def about():
-    return render_template("about.html")
-
-@app.route("/resources")
-def resources():
-    return render_template("resources.html")
-
-@app.route("/contact", methods=["GET", "POST"])
-def contact():
-    if request.method == "POST":
-        name = request.form.get("name")
-        email = request.form.get("email")
-        subject = request.form.get("subject")
-        message = request.form.get("message")
-
-        if not all([name, email, message]):
-            flash("Please fill all fields.", "danger")
-            return redirect(url_for("contact"))
-
-        try:
-            msg = Message(
-                subject=f"[CardioGuard] {subject or 'New Message'} from {name}",
-                recipients=[os.getenv("MAIL_DEFAULT_RECEIVER")],
-                body=f"Name: {name}\nEmail: {email}\n{message}"
-            )
-            mail.send(msg)
-            flash("✅ Message sent successfully!", "success")
-        except Exception as e:
-            print("Mail send error:", e)
-            flash("❌ Failed to send message.", "danger")
-        return redirect(url_for("contact"))
-    return render_template("contact.html")
+    # Option 1: Render the main form directly on the index page
+    return render_template(
+        "form.html", # Use the form template as the main page
+        FORM_COLUMNS_CLINICAL=FEATURES_LIVER_CLINICAL, # Pass clinical feature names
+        FORM_COLUMNS_LIFESTYLE=FEATURES_LIVER_GENERAL  # Pass general feature names
+    )
+    # Option 2: Render a simple landing page that redirects to /form
+    # return render_template("index.html") # If you create a simple index.html
 
 @app.route("/form")
 def form():
@@ -1112,53 +901,57 @@ def form():
                 return redirect(url_for('index'))
     return render_template(
         "form.html",
-        BASE_COLUMNS_CLINICAL=BASE_COLUMNS_CLINICAL,
-        BASE_COLUMNS_LIFESTYLE=BASE_COLUMNS_LIFESTYLE
+        FORM_COLUMNS_CLINICAL=FEATURES_LIVER_CLINICAL,
+        FORM_COLUMNS_LIFESTYLE=FEATURES_LIVER_GENERAL
     )
 
 # ============================================================
-# Routes - Prediction & AI
+# Routes - Prediction & AI (HepaGuard Specific)
 # ============================================================
 
 @app.route("/predict", methods=["POST"])
-#@check_subscription_access # Apply access control
+@check_subscription_access # Apply access control
 def predict():
     try:
         raw_type = (request.form.get("model_type") or "clinical").lower()
-        model_map = {"heart": "clinical", "clinical": "clinical", "cardio": "lifestyle", "lifestyle": "lifestyle"}
+        # Map user-friendly names to internal types
+        model_map = {
+            "liver_clinical": "clinical",
+            "clinical": "clinical",
+            "liver_general": "lifestyle", # Map 'liver_general' to 'lifestyle' internally
+            "lifestyle": "lifestyle",
+            "general": "lifestyle" # Also map 'general' to 'lifestyle'
+        }
         model_type = model_map.get(raw_type, "clinical")
 
         uploaded_file = request.files.get("file")
         if uploaded_file and uploaded_file.filename:
             df = pd.read_csv(uploaded_file)
-            results, raw_features_df = prepare_and_predict(df, model_type) # Receive raw features
         else:
-            base_cols = BASE_COLUMNS_CLINICAL if model_type == "clinical" else BASE_COLUMNS_LIFESTYLE
+            # Use the appropriate feature list based on the model type
+            base_cols = FEATURES_LIVER_CLINICAL if model_type == "clinical" else FEATURES_LIVER_GENERAL
             user_data = {}
             for c in base_cols:
-                # alias mapping: allow 'sex' -> 'gender' etc.
+                # Get value from form, handle aliases if needed
                 val = request.form.get(c)
                 if val is None:
-                    if c == "gender":
-                        val = request.form.get("sex")
-                    if c == "cholesterol":
-                        val = request.form.get("chol")
+                    # Add alias mapping here if needed, e.g., 'gender' -> 'RIAGENDR'
+                    # Example: if c == "RIAGENDR": val = request.form.get("gender")
+                    pass # No aliases defined in this example
                 user_data[c] = val
-
             df = pd.DataFrame([user_data])
-            results, raw_features_df = prepare_and_predict(df, model_type) # Receive raw features
 
-        # --- POST-SUCCESS LOGIC FOR ACCESS CONTROL ---
-        user_id = session.get("user_id")
-        if user_id:
-            # Logged in user: record the prediction in the 'records' table
-            # This implicitly tracks usage for paid users based on plan limits (handled in decorator)
+        # --- Predict ---
+        results = prepare_and_predict(df, model_type)
+
+        # --- Post-Success Logic (saving records, session update) ---
+        if user_id := session.get("user_id"):
             try:
                 supabase.table("records").insert({
                     "user_id": user_id,
-                    "consultation_type": model_type,
-                    "health_score": float(results.iloc[0]["Prob_Pos"]), # Store probability as score
-                    "recommendation": "See results page for details." # Or derive from results
+                    "consultation_type": f"liver_{model_type}", # Store liver-specific type
+                    "health_score": float(results.iloc[0]["Prob_Pos"]),
+                    "recommendation": "See results page for details."
                 }).execute()
             except Exception as e:
                 print(f"Error saving record for user {user_id}: {e}")
@@ -1168,48 +961,47 @@ def predict():
             # Non-logged-in user: update session time
             session['last_form_time'] = datetime.now().isoformat()
 
-        # --- END POST-SUCCESS LOGIC ---
+        # --- Prepare Results for Template ---
+        single = results.iloc[0]
+        prob = float(single["Prob_Pos"])
+        risk = single["Risk_Level"]
+        readable = (
+            "Liver Disease Risk Detected" if single["Prediction"] == 1
+            else "No Liver Disease Risk Detected"
+        )
 
-        # Generate SHAP Explanation - NEW
-        shap_explanation = []
-        if not raw_features_df.empty: # Only calculate if raw features exist
-            feature_names = raw_features_df.columns.tolist()
-            # Pass the single row DataFrame to the SHAP function
-            shap_explanation = generate_shap_explanation(raw_features_df.iloc[[0]], # Use iloc[[0]] to keep it as a DataFrame with one row
-                                                        clinical_model if model_type == "clinical" else lifestyle_model,
-                                                        feature_names)
+        # --- Heuristic Inference ---
+        # Map result columns back to function arguments for get_likely_liver_condition
+        # Use .get() with defaults to handle missing columns gracefully
+        likely_condition, suggestions = get_likely_liver_condition(
+            age=single.get("RIDAGEYR"),
+            bmi=single.get("BMXBMI"),
+            alt=single.get("LBXALT", 0), # Use .get with default 0 if column missing
+            ast=single.get("LBXAST", 0),
+            platelets=single.get("LBXPLTSI", 150), # Default normal platelet count
+            ggt=single.get("LBXGGT", 0),
+            bilirubin=single.get("LBXBILI", 0),
+            glucose=single.get("LBXGLU", 0),
+            hba1c=single.get("LBXGH", 0),
+            systolic_bp=single.get("BPXSY1", 0), # Assuming BPQ/BPX variables are available if BPQ020 was used as input
+            diastolic_bp=single.get("BPXDI1", 0), # Assuming BPQ/BPX variables are available
+            hdl_cholesterol=single.get("LBDHDD", 0),
+            total_cholesterol=single.get("LBXTCA", 0),
+            triglycerides=single.get("LBXTR", 0),
+            diabetes_status=single.get("DIQ010"), # Assuming DIQ010 is diabetes flag used as input
+            hypertension_status=single.get("BPQ020"), # Assuming BPQ020 is hypertension flag used as input
+            smoking_status=single.get("SMQ020"), # Assuming SMQ020 is smoking flag used as input
+            alcohol_status=single.get("ALQ130"), # Assuming ALQ130 is alcohol flag used as input
+            family_history_liver=single.get("MCQ160E") # Assuming MCQ160E is family history flag used as input
+        )
 
-        # Save results CSV
-        fname = f"{model_type}_pred_{uuid.uuid4().hex[:8]}.csv"
+        # --- Save Results CSV ---
+        fname = f"liver_{model_type}_pred_{uuid.uuid4().hex[:8]}.csv"
         save_path = os.path.join(RESULTS_DIR, fname)
         results.to_csv(save_path, index=False)
         download_link = url_for("static", filename=f"results/{fname}")
 
-        single = results.iloc[0]
-        prob = float(single["Prob_Pos"])
-        risk = single["Risk_Level"]
-
-        readable = (
-            "Heart Disease Detected" if model_type == "clinical" and single["Prediction"] == 1
-            else "Elevated Cardiovascular Risk" if model_type == "lifestyle" and single["Prediction"] == 1
-            else "No Heart Disease Detected"
-        )
-
-        # heuristic inference (use available fields; fallback to 0)
-        likely_condition, suggestions = get_likely_condition(
-            age=single.get("age"),
-            cholesterol=single.get("chol", single.get("cholesterol", 0)),
-            resting_bp=single.get("trestbps", single.get("ap_hi", 0)),
-            max_heart_rate=single.get("thalach", single.get("ap_lo", 0)),
-            fasting_blood_sugar=single.get("fbs", single.get("gluc", 0)),
-            sex=single.get("sex"),
-            smoking=single.get("smoke"),
-            alcohol=single.get("alco"),
-            physical_activity=single.get("active"),
-            oldpeak=single.get("oldpeak"),
-            st_slope=single.get("slope")
-        )
-
+        # --- Render Result Template ---
         return render_template(
             "result.html",
             result=readable,
@@ -1219,30 +1011,34 @@ def predict():
             suggestions=suggestions,
             tables=[results.to_html(classes="table table-striped", index=False)],
             download_link=download_link,
-            model_type=model_type,
-            shap_explanation=shap_explanation # Pass SHAP explanation to template
+            model_type=model_type
         )
+
     except Exception as e:
         print("Prediction error:", e)
+        import traceback
+        traceback.print_exc() # Print the full traceback for detailed debugging
         flash(f"Error processing prediction: {str(e)}", "danger")
         return redirect(url_for("form"))
 
-# AI chat endpoint (JSON API)
+# AI chat endpoint (JSON API) - HepaGuard specific
 @app.route("/consult", methods=["POST"])
 def consult():
     """
     JSON input:
-    { "user_id": "user-123", "message": "I feel chest pain when..." }
+    { "user_id": "user-123", "message": "I have high GGT, what does it mean?" }
     Response:
     { "reply": "...", "saved": true/false }
     """
     data = request.get_json(silent=True)
-    if not data or "message" not in data:
+    if not data or "message" not in 
         return jsonify({"error": "missing 'message' in JSON body"}), 400
 
     user_msg = data["message"]
     user_id = data.get("user_id", f"anon-{uuid.uuid4().hex[:8]}")
-    system_prompt = os.getenv("CHAT_SYSTEM_PROMPT", "You are CardioConsult, a medically informed assistant. Provide safe, conservative guidance and always advise seeing a clinician for definitive diagnosis.")
+
+    # --- HepaGuard Specific System Prompt ---
+    system_prompt = os.getenv("CHAT_SYSTEM_PROMPT", "You are HepaConsult, a compassionate AI hepatologist providing preventive liver health advice. Provide safe, conservative guidance related to liver function, risk factors, and general wellness. Always advise seeing a hepatologist if symptoms persist or if results are concerning.")
 
     # store user message (best-effort)
     try:
@@ -1270,9 +1066,10 @@ def consult():
 
     return jsonify({"reply": ai_reply, "saved": bool(supabase)}), 200
 
+# Chat UI route (HTML page)
 @app.route("/chat", methods=["GET", "POST"])
 @limiter.limit("5 per minute")
-#@check_subscription_access # Apply access control
+@check_subscription_access # Apply access control
 def chat():
     if request.method == "GET":
         chat_log = session.get("chat_log", [])
@@ -1284,117 +1081,42 @@ def chat():
         chat_log.append({"role": "user", "message": user_message})
 
         try:
+            # --- HepaGuard Specific System Prompt for UI ---
+            system_prompt = "You are HepaConsult, an AI assistant specializing in liver health. Provide helpful, general information about liver function, risk factors, and wellness. Encourage users to see a nephrologist for specific medical advice."
             response = groq_client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 messages=[
-                    {"role": "system", "content": (
-                        "You are CardioConsult, a compassionate AI cardiologist providing preventive health advice. "
-                        "Do not give medical diagnoses; only provide general wellness guidance based on cardiovascular science."
-                    )},
+                    {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_message}
                 ],
                 temperature=0.7,
                 max_tokens = 1000
             )
             reply = response.choices[0].message.content.strip()
-            formatted_reply = markdown.markdown(reply, extensions=["fenced_code", "nl2br"])
         except Exception as e:
             print("Groq connection error:", e)
-            reply = "⚠️ Sorry, I'm having trouble connecting to my heart consultation engine."
+            reply = "⚠️ Sorry, I'm having trouble connecting to my liver consultation engine."
 
-        chat_log.append({"role": "assistant", "message": formatted_reply})
-        session["chat_log"] = chat_log[-10:]
+        chat_log.append({"role": "assistant", "message": reply})
+        session["chat_log"] = chat_log[-10:] # Keep last 10 exchanges
 
         try:
             supabase.table("chat_logs").insert({
                 "user_id": session.get("user_id", "guest"),
                 "user_message": user_message,
-                "bot_reply": formatted_reply,
+                "bot_reply": reply,
             }).execute()
         except Exception as e:
             print("Logging error:", e)
 
-        return jsonify({"reply": formatted_reply})
-
-@app.route("/api/chat", methods=["POST"])
-@limiter.limit("5 per minute")  # tighter limit for chat API
-def ai_chat():
-    user_input = request.json.get("message", "").strip()
-    if not user_input:
-        return jsonify({"error": "Message cannot be empty."}), 400
-
-    # Check if user is logged in and has access (for API calls, check session or token)
-    user_id = request.json.get("id") # Assuming API sends user_id
-    if user_id:
-        # Fetch subscription for API user
-        try:
-            sub_status, is_free_plan = get_user_subscription_status(user_id)
-            if is_free_plan or sub_status != "active":
-                return jsonify({"error": "AI chat access denied. Upgrade your subscription."}), 403
-        except Exception:
-            return jsonify({"error": "Subscription check failed."}), 500
-    else:
-        # For anonymous API calls, deny access
-        return jsonify({"error": "AI chat requires authentication and a paid subscription."}), 403
-
-    # Retrieve session chat (if applicable for API, maybe use DB or token-based session)
-    # For simplicity here, we'll proceed without session for the API endpoint
-    # In a real app, you'd manage state differently for APIs.
-
-    # Prepare Groq request
-    try:
-        response = requests.post(
-            GROQ_API_URL,
-            headers={
-                "Authorization": f"Bearer {GROQ_API_KEY}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "llama-3.3-70b-versatile",  # free + hosted
-                "messages": [
-                    {"role": "system", "content": "You are CardioConsult, an AI cardiovascular consultant. Provide informative, safe health responses and always encourage users to see a doctor if symptoms persist."},
-                    {"role": "user", "content": user_input}
-                ],
-                "temperature": 0.7
-            },
-            timeout=15
-        )
-        data = response.json()
-        ai_reply = data["choices"][0]["message"]["content"]
-
-        # Basic logging (could log to DB instead)
-        print(f"[CHAT LOG] User: {user_input}\nAI: {ai_reply}\n---")
-
-        return jsonify({"reply": ai_reply})
-    except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({"error": "CardioConsult AI is currently unavailable. Please try again later."}), 500
-
-# -----------------------------
-# Utility: Clear chat
-# -----------------------------
-@app.route("/chat/clear")
-def clear_chat():
-    session.pop("chat_history", None)
-    flash("Chat history cleared.")
-    return redirect(url_for("chat"))
-
-@app.route("/chat-history/<user_id>", methods=["GET"])
-def chat_history(user_id):
-    if not supabase:
-        return jsonify({"error": "Chat history persistence is not configured."}), 400
-    try:
-        res = supabase.table("chat_history").select("*").eq("user_id", user_id).order("created_at", desc=False).execute()
-        return jsonify({"history": res.data}), 200
-    except Exception as e:
-        print("Supabase fetch failed:", e)
-        return jsonify({"error": "Failed to fetch history", "details": str(e)}), 500
+        return jsonify({"reply": reply})
 
 # ============================================================
-# Routes - Doctor Features
+# Routes - Doctor Features (HepaGuard Specific)
 # ============================================================
 
 @app.route("/doctor/availability", methods=["GET", "POST"])
+@login_required
 def doctor_availability():
     if session.get("role") != "doctor":
         flash("Doctor access only.", "warning")
@@ -1404,8 +1126,8 @@ def doctor_availability():
     # find doctor record
     doctor_data = supabase.table("doctors").select("id").eq("user_id", user_id).single().execute()
     if not doctor_data.data:
-        flash("Doctor profile not found.", "danger")
-        return redirect(url_for("doctor_dashboard"))
+        flash("Doctor profile not found. Please contact support.", "danger")
+        return redirect(url_for("login"))
 
     doctor_id = doctor_data.data["id"]
 
@@ -1443,7 +1165,7 @@ def book_appointment():
         slot_id = request.form.get("slot_id")
         # Fetch slot
         slot_data = supabase.table("doctor_availability").select("*").eq("id", slot_id).single().execute()
-        if not slot_data:
+        if not slot_data.data:
             flash("Invalid slot selected.", "danger")
             return redirect(url_for("book_appointment"))
 
@@ -1460,7 +1182,6 @@ def book_appointment():
 
         # --- NEW: Generate Jitsi URL ---
         jitsi_url = generate_jitsi_url(slot_id, dt_str) # Use slot_id and time_str for uniqueness
-
         supabase.table("appointments").insert({
             "user_id": user_id,
             "doctor_id": doctor_id,
@@ -1475,7 +1196,7 @@ def book_appointment():
         # --- NEW: Send Appointment Reminder Email ---
         # Fetch doctor details for the email
         doctor_details = supabase.table("doctors").select("id, specialization").eq("id", doctor_id).single().execute().data
-        user_details = supabase.table("users").select("name, email").eq("id", user_id).single().execute().data
+        user_details = supabase.table("users").select("id, name, email").eq("id", user_id).single().execute().data
 
         doctor_name = doctor_details.get("specialization", "Unknown") # Or fetch from user table if needed
         user_name = user_details.get("name")
@@ -1492,7 +1213,7 @@ def book_appointment():
         "id, doctor_id, available_date, start_time, end_time"
     ).eq("is_booked", False).execute().data
 
-    doctors_data = supabase.table("doctors").select("id, specialization, bio").execute().data
+    doctors_data = supabase.table("doctors").select("id, specialization").execute().data
     doctor_lookup = {d["id"]: d for d in doctors_data}
 
     # Build a frontend-friendly JSON object for JavaScript
@@ -1510,7 +1231,6 @@ def book_appointment():
         }
         for s in available_slots
     )
-
     return render_template("book_appointment.html", slots=formatted_slots)
 
 @app.route("/my-bookings")
@@ -1519,20 +1239,21 @@ def my_bookings():
     user_id = session.get("user_id")
     # --- NEW: Include meeting_url in query ---
     appointments = supabase.table("appointments").select(
-        "id, appointment_time, status, doctor_id, meeting_url" # Include meeting_url
+        "id, doctor_id, appointment_time, status, meeting_url" # Include meeting_url
     ).eq("user_id", user_id).order("appointment_time", desc=True).execute().data
 
     doctor_lookup = {}
     try:
         if doctor_ids := list({a["doctor_id"] for a in appointments}):
-            doctors = supabase.table("doctors").select("id, specialization").in_("id", doctor_ids).execute().data
-            doctor_lookup = {d["id"]: d for d in doctors}
+            doctors_info = supabase.table("doctors").select("id, specialization").in_("id", doctor_ids).execute().data
+            doctor_lookup = {d["id"]: d for d in doctors_info}
     except Exception as e:
         print("Doctor fetch error:", e)
 
     return render_template("my_bookings.html", appointments=appointments, doctors=doctor_lookup)
+
 # ============================================================
-# Routes - Subscription Management
+# Routes - Subscription Management (HepaGuard Specific)
 # ============================================================
 
 @app.route("/pricing")
@@ -1548,7 +1269,7 @@ def pricing():
         print(f"Error fetching plans: {e}")
         flash("Error loading plans. Please try again later.", "danger")
         plans = [] # Fallback to empty list if fetch fails
-    return render_template("pricing.html", plans=plans) 
+    return render_template("pricing.html", plans=plans)
 
 @app.route("/subscribe/<plan_name>", methods=["GET", "POST"])
 @login_required
@@ -1565,6 +1286,7 @@ def subscribe(plan_name):
         return redirect(url_for("user_dashboard"))
 
     user_id = session["user_id"]
+
     if request.method == "POST":
         # Create Paystack transaction
         amount_kobo = int(float(plan["price"]) * 100)
@@ -1606,6 +1328,7 @@ def verify_payment():
         metadata = res_data["data"]["metadata"]
         user_id = metadata["user_id"]
         plan_id = metadata["plan_id"]
+
         # Record in Supabase
         supabase.table("user_subscriptions").insert({
             "user_id": user_id,
@@ -1613,6 +1336,7 @@ def verify_payment():
             "status": "active",
             "start_date": datetime.now(timezone.utc).isoformat()
         }).execute()
+
         flash("Subscription successful!", "success")
     else:
         flash("Payment verification failed.", "danger")
@@ -1624,6 +1348,7 @@ def cancel_subscription(sub_id):
     if session.get("role") != "user":
         flash("Unauthorized", "danger")
         return redirect(url_for("user_dashboard"))
+
     user_id = session.get("user_id")
     # Update status to cancelled
     supabase.table("user_subscriptions").update({"status": "cancelled"}).eq("id", sub_id).eq("user_id", user_id).execute()
@@ -1631,13 +1356,12 @@ def cancel_subscription(sub_id):
     return redirect(url_for("user_dashboard"))
 
 # ============================================================
-# Routes - Dashboards
+# Routes - Dashboards (HepaGuard Specific)
 # ============================================================
 
 @app.route("/doctor/dashboard")
 @login_required
 def doctor_dashboard():
-    # Check if user is logged in as a doctor
     if session.get("role") != "doctor":
         flash("Access denied. Doctors only.", "danger")
         return redirect(url_for("login"))
@@ -1648,7 +1372,7 @@ def doctor_dashboard():
     if not doctor_id:
         try:
             doc_data = supabase.table("doctors").select("id").eq("id", user_id).single().execute()
-            if doc_data and doc_data:
+            if doc_data.data:
                 doctor_id = doc_data.data["id"]
                 session["doctor_id"] = doctor_id # Store for future use in this session
             else:
@@ -1707,6 +1431,8 @@ def user_dashboard():
 
         # Fetch user's health records if applicable
         records = supabase.table("records").select("*").eq("user_id", user_id).order("created_at", desc=True).execute().data
+        # Filter for liver records if needed
+        liver_records = [r for r in records if 'liver' in r.get('consultation_type', '').lower()]
 
         # Fetch user's booked appointments
         # --- NEW: Include meeting_url in query ---
@@ -1730,9 +1456,9 @@ def user_dashboard():
                 doctor_details[doc_id] = {**doc_info, **user_info} # e.g., {'specialization': 'Cardiology', 'name': 'Dr. Smith'}
 
         # Prepare data for charts (example remains the same)
-        if records:
-            labels = [r["created_at"][:10] for r in records]
-            scores = [r["health_score"] for r in records]
+        if liver_records: # Use liver-specific records
+            labels = [r["created_at"][:10] for r in liver_records]
+            scores = [r["health_score"] for r in liver_records]
         else:
             labels, scores = [], []
 
@@ -1753,14 +1479,14 @@ def user_dashboard():
                 current_plan_is_free = plan_info.get("is_free", True)
 
     except Exception as e:
-        print(f"Error fetching user dashboard  {e}")
+        print(f"Error fetching user dashboard data: {e}")
         flash("Error loading dashboard data. Please try again later.", "danger")
         return redirect(url_for("login")) # Or render a partial template
 
     return render_template(
         "user_dashboard.html",
         user=user_data,
-        records=records,
+        records=liver_records, # Pass liver-specific records
         chart_labels=json.dumps(labels),
         chart_scores=json.dumps(scores),
         appointments=appointments, # Pass appointments to the template
@@ -1768,8 +1494,7 @@ def user_dashboard():
         user_subscriptions=user_subscriptions, # Pass subscriptions to the template
         current_plan_is_free=current_plan_is_free # Pass plan status for UI
     )
-    
-    
+
 @app.route("/admin/dashboard")
 @login_required
 def admin_dashboard():
@@ -1800,8 +1525,18 @@ def admin_dashboard():
         record_data = supabase.table("records").select("consultation_type").execute().data
         type_count = {}
         for r in record_data:
-            ctype = r.get("consultation_type", "Unknown")
-            type_count[ctype] = type_count.get(ctype, 0) + 1
+             # Group by liver types
+             ctype = r.get("consultation_type", "Unknown")
+             if 'liver' in ctype.lower():
+                 if 'clinical' in ctype.lower():
+                     key = 'Liver Clinical'
+                 elif 'lifestyle' in ctype.lower(): # Or 'general'
+                     key = 'Liver Lifestyle'
+                 else:
+                     key = 'Liver Other'
+             else:
+                 key = 'Other' # Or handle other types if they exist
+             type_count[key] = type_count.get(key, 0) + 1
 
         # Aggregate data for user role chart (if roles are stored in users table)
         user_roles = supabase.table("users").select("role").execute().data
@@ -1841,9 +1576,8 @@ def admin_dashboard():
 
         # --- Fetch all user subscriptions for admin ---
         user_subscriptions = supabase.table("user_subscriptions").select(
-            "id, user_id, status, start_date, end_date, subscription_plans(name, price)"
+            "id, user_id, status, start_date, end_date, subscription_plans(name, price, is_free)"
         ).execute().data
-
         if user_ids_for_subs := list(
             {sub["user_id"] for sub in user_subscriptions}
         ):
@@ -1881,13 +1615,6 @@ def admin_dashboard():
         user_lookup_for_subs=user_lookup_for_subs
     )
 
-def log_activity(user_id, plan_id, activity_type):
-    supabase.table("user_subscription_activity").insert({
-        "user_id": user_id,
-        "plan_id": plan_id,
-        "activity_type": activity_type
-    }).execute()
-
 # ============================================================
 # Routes - Utility
 # ============================================================
@@ -1899,6 +1626,7 @@ def health():
 # ============================================================
 # Run
 # ============================================================
+
 if __name__ == "__main__":
     # For production use gunicorn (or fly/gunicorn)
     port = int(os.getenv("PORT", 10000))

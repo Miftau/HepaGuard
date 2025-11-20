@@ -1,15 +1,19 @@
-
+<!-- resources.html -->
 {% extends 'base.html' %}
+
+{% block title %}RenalGuard - Helpful Resources{% endblock %}
+
 {% block content %}
+
 <!-- Hero Section -->
-<section class="bg-gradient-to-r from-red-50 to-white py-16 border-b">
+<section class="bg-gradient-to-r from-blue-50 to-indigo-50 py-16 border-b border-indigo-100">
   <div class="container mx-auto px-4">
     <div class="max-w-3xl mx-auto text-center">
-      <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">Heart Health Resources</h1>
+      <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">Kidney Health Resources</h1>
       <p class="text-xl text-gray-600 mb-6">
-        Tools, guides, and information to support your cardiovascular health
+        Tools, guides, and information to support your kidney health
       </p>
-      <div class="w-24 h-1 bg-red-500 rounded-full mx-auto"></div>
+      <div class="w-24 h-1 bg-blue-500 rounded-full mx-auto"></div>
     </div>
   </div>
 </section>
@@ -18,179 +22,180 @@
 <section class="py-16">
   <div class="container mx-auto px-4">
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      <!-- Category 1 -->
+      <!-- Category 1: Kidney Basics -->
       <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">
-        <div class="bg-red-500 p-6">
-          <i class="fas fa-heartbeat text-white text-4xl mb-4"></i>
-          <h3 class="text-xl font-bold text-white">Risk Factors Guide</h3>
+        <div class="bg-blue-500 p-6">
+          <i class="fas fa-kidneys text-white text-4xl mb-4"></i> <!-- Using a kidney icon if available in Font Awesome, else use fa-heartbeat -->
+          <h3 class="text-xl font-bold text-white">Kidney Basics</h3>
         </div>
         <div class="p-6">
-          <p class="text-gray-600 mb-4">Understand the key factors that contribute to heart disease and how to manage them.</p>
+          <p class="text-gray-600 mb-4">Learn about kidney function, common diseases, and early signs.</p>
           <ul class="space-y-2 mb-6">
             <li class="flex items-start">
-              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
-              <span>Cholesterol management</span>
+              <i class="fas fa-info-circle text-blue-500 mt-1 mr-2"></i>
+              <span>How kidneys work</span>
             </li>
             <li class="flex items-start">
-              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
-              <span>Blood pressure control</span>
+              <i class="fas fa-info-circle text-blue-500 mt-1 mr-2"></i>
+              <span>Chronic Kidney Disease (CKD)</span>
             </li>
             <li class="flex items-start">
-              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
-              <span>Family history considerations</span>
+              <i class="fas fa-info-circle text-blue-500 mt-1 mr-2"></i>
+              <span>Stages of CKD</span>
             </li>
           </ul>
-          <a href="https://www.nhlbi.nih.gov/health/heart-failure/causes#:~:text=Aging%20can%20weaken%20and%20stiffen,failure%20at%20a%20younger%20age." class="text-red-500 font-medium hover:underline flex items-center">
-            Explore Guide
-            <i class="fas fa-arrow-right ml-2 text-sm"></i>
-          </a>
-        </div>
-      </div>
-      
-      <!-- Category 2 -->
-      <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">
-        <div class="bg-red-600 p-6">
-          <i class="fas fa-dumbbell text-white text-4xl mb-4"></i>
-          <h3 class="text-xl font-bold text-white">Exercise Plans</h3>
-        </div>
-        <div class="p-6">
-          <p class="text-gray-600 mb-4">Cardiovascular exercise routines for all fitness levels to strengthen your heart.</p>
-          <ul class="space-y-2 mb-6">
-            <li class="flex items-start">
-              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
-              <span>Beginner walking programs</span>
-            </li>
-            <li class="flex items-start">
-              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
-              <span>Intermediate cardio workouts</span>
-            </li>
-            <li class="flex items-start">
-              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
-              <span>Strength training basics</span>
-            </li>
-          </ul>
-          <a href="https://www.bswhealth.com/blog/heart-smart-workouts#:~:text=Examples%20of%20heart%2Dhealthy%20exercises,and%20improve%20flexibility%20and%20strength" class="text-red-500 font-medium hover:underline flex items-center">
-            View Plans
-            <i class="fas fa-arrow-right ml-2 text-sm"></i>
-          </a>
-        </div>
-      </div>
-      
-      <!-- Category 3 -->
-      <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">
-        <div class="bg-red-700 p-6">
-          <i class="fas fa-utensils text-white text-4xl mb-4"></i>
-          <h3 class="text-xl font-bold text-white">Heart-Healthy Recipes</h3>
-        </div>
-        <div class="p-6">
-          <p class="text-gray-600 mb-4">Nutritious meals designed to support cardiovascular health and lower risk factors.</p>
-          <ul class="space-y-2 mb-6">
-            <li class="flex items-start">
-              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
-              <span>Low-sodium meals</span>
-            </li>
-            <li class="flex items-start">
-              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
-              <span>Omega-3 rich foods</span>
-            </li>
-            <li class="flex items-start">
-              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
-              <span>Antioxidant-packed options</span>
-            </li>
-          </ul>
-          <a href="https://www.ahajournals.org/doi/10.1161/cir.0000000000001031" class="text-red-500 font-medium hover:underline flex items-center">
-            View Recipes
-            <i class="fas fa-arrow-right ml-2 text-sm"></i>
-          </a>
-        </div>
-      </div>
-      
-      <!-- Category 4 -->
-      <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">
-        <div class="bg-red-500 p-6">
-          <i class="fas fa-book-medical text-white text-4xl mb-4"></i>
-          <h3 class="text-xl font-bold text-white">Medical Information</h3>
-        </div>
-        <div class="p-6">
-          <p class="text-gray-600 mb-4">Learn about common heart conditions, symptoms, and treatment options.</p>
-          <ul class="space-y-2 mb-6">
-            <li class="flex items-start">
-              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
-              <span>Understanding arrhythmias</span>
-            </li>
-            <li class="flex items-start">
-              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
-              <span>Heart failure management</span>
-            </li>
-            <li class="flex items-start">
-              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
-              <span>Angioplasty and stents</span>
-            </li>
-          </ul>
-          <a href="https://my.clevelandclinic.org/health/diseases/24129-heart-disease" class="text-red-500 font-medium hover:underline flex items-center">
+          <a href="https://www.kidney.org/atoz/content/about-kidneys" target="_blank" class="text-blue-500 font-medium hover:underline flex items-center">
             Learn More
             <i class="fas fa-arrow-right ml-2 text-sm"></i>
           </a>
         </div>
       </div>
-      
-      <!-- Category 5 -->
+
+      <!-- Category 2: Managing Risk Factors -->
       <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">
-        <div class="bg-red-600 p-6">
-          <i class="fas fa-user-md text-white text-4xl mb-4"></i>
-          <h3 class="text-xl font-bold text-white">Finding Care</h3>
+        <div class="bg-blue-600 p-6">
+          <i class="fas fa-heartbeat text-white text-4xl mb-4"></i>
+          <h3 class="text-xl font-bold text-white">Managing Risk Factors</h3>
         </div>
         <div class="p-6">
-          <p class="text-gray-600 mb-4">Resources to help you find qualified healthcare providers and support groups.</p>
+          <p class="text-gray-600 mb-4">Understand and control factors like diabetes, hypertension, and lifestyle.</p>
           <ul class="space-y-2 mb-6">
             <li class="flex items-start">
-              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
-              <span>Cardiologist directory</span>
+              <i class="fas fa-check-circle text-blue-500 mt-1 mr-2"></i>
+              <span>Diabetes management</span>
             </li>
             <li class="flex items-start">
-              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
-              <span>Telemedicine options</span>
+              <i class="fas fa-check-circle text-blue-500 mt-1 mr-2"></i>
+              <span>Blood pressure control</span>
             </li>
             <li class="flex items-start">
-              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
-              <span>Support groups</span>
+              <i class="fas fa-check-circle text-blue-500 mt-1 mr-2"></i>
+              <span>Smoking cessation</span>
             </li>
           </ul>
-          <a href="https://www.dhcs.ca.gov/services/medi-cal/Pages/FQHC_RHC.aspx#:~:text=The%20Health%20Resources%20and%20Service%20Administration%20(HRSA),find%20a%20Federally%20Qualified%20Health%20Center%20(FQHC)." class="text-red-500 font-medium hover:underline flex items-center">
-            Find Care
+          <a href="https://www.kidney.org/atoz/content/risk" target="_blank" class="text-blue-500 font-medium hover:underline flex items-center">
+            Explore Guide
             <i class="fas fa-arrow-right ml-2 text-sm"></i>
           </a>
         </div>
       </div>
-      
-      <!-- Category 6 -->
+
+      <!-- Category 3: Diet & Nutrition -->
       <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">
-        <div class="bg-red-700 p-6">
-          <i class="fas fa-mobile-alt text-white text-4xl mb-4"></i>
-          <h3 class="text-xl font-bold text-white">Health Apps</h3>
+        <div class="bg-indigo-500 p-6">
+          <i class="fas fa-utensils text-white text-4xl mb-4"></i>
+          <h3 class="text-xl font-bold text-white">Kidney-Friendly Nutrition</h3>
         </div>
         <div class="p-6">
-          <p class="text-gray-600 mb-4">Recommended applications to track your heart health, medications, and appointments.</p>
+          <p class="text-gray-600 mb-4">Recipes and dietary guidelines designed for kidney health.</p>
           <ul class="space-y-2 mb-6">
             <li class="flex items-start">
-              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
-              <span>Heart rate monitors</span>
+              <i class="fas fa-leaf text-blue-500 mt-1 mr-2"></i>
+              <span>Low-sodium meals</span>
             </li>
             <li class="flex items-start">
-              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
-              <span>Medication reminders</span>
+              <i class="fas fa-leaf text-blue-500 mt-1 mr-2"></i>
+              <span>Phosphorus and potassium limits</span>
             </li>
             <li class="flex items-start">
-              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
-              <span>Appointment trackers</span>
+              <i class="fas fa-leaf text-blue-500 mt-1 mr-2"></i>
+              <span>Healthy cooking tips</span>
             </li>
           </ul>
-          <a href="https://pcna.net/news/8-smart-mobile-apps-and-gadgets-for-heart-health/#:~:text=With%20more%20studies%20suggesting%20that,help%20when%20CPR%20is%20needed." class="text-red-500 font-medium hover:underline flex items-center">
-            View Apps
+          <a href="https://www.kidney.org/atoz/content/recipes" target="_blank" class="text-blue-500 font-medium hover:underline flex items-center">
+            View Recipes
             <i class="fas fa-arrow-right ml-2 text-sm"></i>
           </a>
         </div>
       </div>
+
+      <!-- Category 4: Exercise & Wellness -->
+      <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">
+        <div class="bg-indigo-600 p-6">
+          <i class="fas fa-dumbbell text-white text-4xl mb-4"></i>
+          <h3 class="text-xl font-bold text-white">Exercise & Wellness</h3>
+        </div>
+        <div class="p-6">
+          <p class="text-gray-600 mb-4">Safe and effective ways to stay active and healthy.</p>
+          <ul class="space-y-2 mb-6">
+            <li class="flex items-start">
+              <i class="fas fa-running text-blue-500 mt-1 mr-2"></i>
+              <span>Walking programs</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-running text-blue-500 mt-1 mr-2"></i>
+              <span>Strength training basics</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-running text-blue-500 mt-1 mr-2"></i>
+              <span>Stress management</span>
+            </li>
+          </ul>
+          <a href="https://www.niddk.nih.gov/health-information/weight-management/physical-activity-and-weight-loss" target="_blank" class="text-blue-500 font-medium hover:underline flex items-center">
+            Get Active
+            <i class="fas fa-arrow-right ml-2 text-sm"></i>
+          </a>
+        </div>
+      </div>
+
+      <!-- Category 5: Treatment & Care -->
+      <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">
+        <div class="bg-blue-700 p-6">
+          <i class="fas fa-book-medical text-white text-4xl mb-4"></i>
+          <h3 class="text-xl font-bold text-white">Treatment & Care</h3>
+        </div>
+        <div class="p-6">
+          <p class="text-gray-600 mb-4">Information on dialysis, transplantation, and managing CKD progression.</p>
+          <ul class="space-y-2 mb-6">
+            <li class="flex items-start">
+              <i class="fas fa-procedures text-blue-500 mt-1 mr-2"></i>
+              <span>Understanding dialysis</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-procedures text-blue-500 mt-1 mr-2"></i>
+              <span>Kidney transplantation</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-procedures text-blue-500 mt-1 mr-2"></i>
+              <span>Working with your care team</span>
+            </li>
+          </ul>
+          <a href="https://www.kidney.org/atoz/content/treatment-options" target="_blank" class="text-blue-500 font-medium hover:underline flex items-center">
+            Learn More
+            <i class="fas fa-arrow-right ml-2 text-sm"></i>
+          </a>
+        </div>
+      </div>
+
+      <!-- Category 6: Data & Research -->
+      <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">
+        <div class="bg-indigo-700 p-6">
+          <i class="fas fa-database text-white text-4xl mb-4"></i>
+          <h3 class="text-xl font-bold text-white">Data & Research</h3>
+        </div>
+        <div class="p-6">
+          <p class="text-gray-600 mb-4">Access the scientific data used to develop tools like RenalGuard.</p>
+          <ul class="space-y-2 mb-6">
+            <li class="flex items-start">
+              <i class="fas fa-file-alt text-blue-500 mt-1 mr-2"></i>
+              <span>NHANES Data Source</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-file-alt text-blue-500 mt-1 mr-2"></i>
+              <span>Scientific Publications</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-file-alt text-blue-500 mt-1 mr-2"></i>
+              <span>Health Statistics</span>
+            </li>
+          </ul>
+          <a href="https://wwwn.cdc.gov/nchs/nhanes/" target="_blank" class="text-blue-500 font-medium hover:underline flex items-center">
+            Explore Data
+            <i class="fas fa-arrow-right ml-2 text-sm"></i>
+          </a>
+        </div>
+      </div>
+
     </div>
   </div>
 </section>
@@ -199,51 +204,51 @@
 <section class="py-16 bg-gray-50">
   <div class="container mx-auto px-4">
     <div class="text-center mb-16">
-      <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">Additional Resources</h2>
+      <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">Trusted Health Organizations</h2>
       <p class="text-gray-600 max-w-2xl mx-auto">
-        Helpful links and information from trusted health organizations
+        Reliable information from leading kidney health institutions
       </p>
-      <div class="w-24 h-1 bg-red-500 rounded-full mx-auto mt-4"></div>
+      <div class="w-24 h-1 bg-blue-500 rounded-full mx-auto mt-4"></div>
     </div>
-    
+
     <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
-      <a href="https://www.heart.org" target="_blank" class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-start hover:shadow-md transition">
-        <div class="bg-red-100 p-3 rounded-full mr-4">
-          <i class="fas fa-external-link-alt text-red-500"></i>
+      <a href="https://www.kidney.org/" target="_blank" class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-start hover:shadow-md transition">
+        <div class="bg-blue-100 p-3 rounded-full mr-4">
+          <i class="fas fa-external-link-alt text-blue-500"></i>
         </div>
         <div>
-          <h3 class="text-xl font-bold text-gray-800 mb-2">American Heart Association</h3>
-          <p class="text-gray-600">Comprehensive heart health information and research</p>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">National Kidney Foundation (NKF)</h3>
+          <p class="text-gray-600">Comprehensive kidney health information and resources.</p>
         </div>
       </a>
-      
-      <a href="https://www.cdc.gov/heartdisease" target="_blank" class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-start hover:shadow-md transition">
-        <div class="bg-red-100 p-3 rounded-full mr-4">
-          <i class="fas fa-external-link-alt text-red-500"></i>
+
+      <a href="https://www.niddk.nih.gov/health-information/kidney-disease" target="_blank" class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-start hover:shadow-md transition">
+        <div class="bg-blue-100 p-3 rounded-full mr-4">
+          <i class="fas fa-external-link-alt text-blue-500"></i>
         </div>
         <div>
-          <h3 class="text-xl font-bold text-gray-800 mb-2">CDC Heart Disease</h3>
-          <p class="text-gray-600">Statistics, prevention tips, and public health resources</p>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">NIDDK Kidney Disease</h3>
+          <p class="text-gray-600">Research-based health information from the National Institute.</p>
         </div>
       </a>
-      
-      <a href="https://www.nih.gov/health-information" target="_blank" class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-start hover:shadow-md transition">
-        <div class="bg-red-100 p-3 rounded-full mr-4">
-          <i class="fas fa-external-link-alt text-red-500"></i>
+
+      <a href="https://www.cdc.gov/kidneydisease/index.html" target="_blank" class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-start hover:shadow-md transition">
+        <div class="bg-blue-100 p-3 rounded-full mr-4">
+          <i class="fas fa-external-link-alt text-blue-500"></i>
         </div>
         <div>
-          <h3 class="text-xl font-bold text-gray-800 mb-2">NIH Health Information</h3>
-          <p class="text-gray-600">Research-based health information from the National Institutes of Health</p>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">CDC Kidney Disease</h3>
+          <p class="text-gray-600">Public health information on kidney disease prevention.</p>
         </div>
       </a>
-      
-      <a href="https://www.mayoclinic.org/diseases-conditions/heart-disease" target="_blank" class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-start hover:shadow-md transition">
-        <div class="bg-red-100 p-3 rounded-full mr-4">
-          <i class="fas fa-external-link-alt text-red-500"></i>
+
+      <a href="https://www.nephrology.org/" target="_blank" class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-start hover:shadow-md transition">
+        <div class="bg-blue-100 p-3 rounded-full mr-4">
+          <i class="fas fa-external-link-alt text-blue-500"></i>
         </div>
         <div>
-          <h3 class="text-xl font-bold text-gray-800 mb-2">Mayo Clinic</h3>
-          <p class="text-gray-600">Detailed information about heart conditions and treatments</p>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">American Society of Nephrology</h3>
+          <p class="text-gray-600">Professional society resources and research.</p>
         </div>
       </a>
     </div>
@@ -251,15 +256,28 @@
 </section>
 
 <!-- CTA Section -->
-<section class="py-16 bg-gradient-to-r from-red-500 to-red-700 text-white">
+<section class="py-16 bg-gradient-to-r from-blue-500 to-indigo-700 text-white">
   <div class="container mx-auto px-4 text-center">
-    <h2 class="text-3xl md:text-4xl font-bold mb-6">Take Control of Your Heart Health</h2>
+    <h2 class="text-3xl md:text-4xl font-bold mb-6">Take Control of Your Kidney Health</h2>
     <p class="text-xl mb-8 max-w-2xl mx-auto">
-      Start your personalized heart health assessment today
+      Start your personalized kidney disease risk assessment today
     </p>
-    <a href="/form" class="bg-white text-red-600 hover:bg-gray-100 font-bold py-4 px-8 rounded-lg text-lg inline-block transition duration-300">
+    <a href="/form" class="bg-white text-blue-600 hover:bg-gray-100 font-bold py-4 px-8 rounded-lg text-lg inline-block transition duration-300">
       Begin Assessment
     </a>
   </div>
 </section>
+
+<!-- Disclaimer -->
+<div class="container mx-auto px-4 py-8">
+  <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-lg">
+    <div class="flex items-start space-x-3">
+      <i class="fas fa-exclamation-triangle text-yellow-500 text-lg mt-1"></i>
+      <p class="text-sm text-yellow-700 leading-relaxed">
+        <strong>Note:</strong> These resources provide general information. Always consult a certified healthcare provider for personalized advice regarding your health.
+      </p>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
