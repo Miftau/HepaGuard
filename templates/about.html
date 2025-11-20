@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    AOS.init({
+      duration: 800,
+      easing: 'ease-out-quart',
+      once: false,
+      mirror: false,
+      offset: 100
+    });
+  });
+</script>
+<style>
+  .fade-in { animation: fadeIn 1s ease-out forwards; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .slide-up { animation: slideUp 0.8s ease-out forwards; }
+  @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .scale-hover { transition: transform 0.3s ease; }
+  .scale-hover:hover { transform: scale(1.05); }
+  .btn-pulse { animation: pulse 2s infinite; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+  .stat-counter { opacity: 0; transition: opacity 0.5s; }
+  .stat-counter.visible { opacity: 1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="bg-gradient-to-r from-red-50 to-white py-16 border-b overflow-hidden">
+  <div class="container mx-auto px-4">
+    <div class="flex flex-col md:flex-row items-center">
+      <div class="md:w-1/2 mb-10 md:mb-0" data-aos="fade-right">
+        <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4 fade-in">About HeartPredict</h1>
+        <p class="text-xl text-gray-600 mb-6 slide-up">
+          Transforming heart health with AI-powered diagnostics
+        </p>
+        <div class="w-24 h-1 bg-red-500 rounded-full mb-6 scale-hover" style="animation-delay: 0.3s;"></div>
+        <p class="text-gray-700 mb-6 slide-up" style="animation-delay: 0.4s;">
+          CardioGuard is an AI-powered diagnostic tool designed to help healthcare professionals and individuals assess the likelihood of heart disease. By combining clinical parameters and modern data science, it transforms traditional diagnosis into fast, data-driven insights.
+        </p>
+        <a href="/form" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg inline-block transition duration-300 btn-pulse scale-hover">
+          Try Our Prediction
+        </a>
+      </div>
+      <div class="md:w-1/2 flex justify-center" data-aos="fade-left" data-aos-delay="200">
+        <div class="bg-gray-200 border-2 border-dashed rounded-xl w-full max-w-lg h-80 flex items-center justify-center overflow-hidden scale-hover">
+          <img src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=755&q=80" alt="Heart Health" class="w-full h-full object-cover rounded-lg transition-transform duration-500 hover:scale-110">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Our Story Section -->
+<section class="py-16 bg-white">
+  <div class="container mx-auto px-4">
+    <div class="text-center mb-16" data-aos="fade-down">
+      <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">Our Story</h2>
+      <div class="w-24 h-1 bg-red-500 rounded-full mx-auto scale-hover"></div>
+    </div>
+    <div class="max-w-4xl mx-auto space-y-6">
+      <p class="text-gray-700 text-lg mb-6 fade-in" data-aos="fade-up" data-aos-delay="100">
+        CardioGuard was founded in 2025 by a team of cardiologists and data scientists who recognized the critical need for early detection tools in cardiovascular health. Our journey began when we noticed that many heart conditions could be prevented with early intervention, yet traditional diagnostic methods were often too late.
+      </p>
+      <p class="text-gray-700 text-lg mb-6 fade-in" data-aos="fade-up" data-aos-delay="200">
+        Combining decades of medical expertise with cutting-edge machine learning techniques, we developed a platform that makes predictive cardiology accessible to both healthcare providers and individuals. Our mission is to reduce heart disease mortality by providing accurate, early detection tools that empower preventive care.
+      </p>
+      <p class="text-gray-700 text-lg fade-in" data-aos="fade-up" data-aos-delay="300">
+        Today, CardioGuard serves thousands of users globally, helping them take proactive steps toward better heart health. Our commitment remains unchanged: to leverage technology for the betterment of human health.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Our Technology & Mission -->
+<div class="py-16 bg-gray-50">
+  <div class="container mx-auto px-4">
+    <div class="grid md:grid-cols-2 gap-10">
+      <div class="bg-white p-8 rounded-2xl shadow-md border border-gray-100 scale-hover" data-aos="zoom-in" data-aos-delay="100">
+        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-6 animate-pulse">
+          <i class="fas fa-brain text-red-500 text-3xl"></i>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-4">Our Technology</h3>
+        <p class="text-gray-600 mb-4">
+          Built using Flask, Scikit-learn, and Plotly, HeartPredict leverages machine learning models trained on cardiology datasets to deliver real-time predictions and interactive visualizations.
+        </p>
+        <ul class="space-y-2">
+          <li class="flex items-start fade-in" data-aos="fade-right" data-aos-delay="50">
+            <i class="fas fa-check-circle text-red-500 mt-1 mr-3"></i>
+            <span>Advanced ML algorithms trained on 10,000+ patient records</span>
+          </li>
+          <li class="flex items-start fade-in" data-aos="fade-right" data-aos-delay="100">
+            <i class="fas fa-check-circle text-red-500 mt-1 mr-3"></i>
+            <span>Real-time risk assessment with 95% accuracy</span>
+          </li>
+          <li class="flex items-start fade-in" data-aos="fade-right" data-aos-delay="150">
+            <i class="fas fa-check-circle text-red-500 mt-1 mr-3"></i>
+            <span>Secure, HIPAA-compliant data handling</span>
+          </li>
+          <li class="flex items-start fade-in" data-aos="fade-right" data-aos-delay="200">
+            <i class="fas fa-check-circle text-red-500 mt-1 mr-3"></i>
+            <span>Interactive visualizations for easy interpretation</span>
+          </li>
+        </ul>
+      </div>
+      <div class="bg-white p-8 rounded-2xl shadow-md border border-gray-100 scale-hover" data-aos="zoom-in" data-aos-delay="200">
+        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-6 animate-pulse">
+          <i class="fas fa-heart text-red-500 text-3xl"></i>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-4">Our Mission</h3>
+        <p class="text-gray-600 mb-4">
+          To democratize access to early heart disease detection tools — reducing risks and empowering preventive care for everyone, everywhere.
+        </p>
+        <ul class="space-y-2">
+          <li class="flex items-start fade-in" data-aos="fade-left" data-aos-delay="50">
+            <i class="fas fa-check-circle text-red-500 mt-1 mr-3"></i>
+            <span>Making predictive healthcare accessible to all</span>
+          </li>
+          <li class="flex items-start fade-in" data-aos="fade-left" data-aos-delay="100">
+            <i class="fas fa-check-circle text-red-500 mt-1 mr-3"></i>
+            <span>Reducing heart disease mortality by 30% by 2030</span>
+          </li>
+          <li class="flex items-start fade-in" data-aos="fade-left" data-aos-delay="150">
+            <i class="fas fa-check-circle text-red-500 mt-1 mr-3"></i>
+            <span>Empowering individuals to take control of their health</span>
+          </li>
+          <li class="flex items-start fade-in" data-aos="fade-left" data-aos-delay="200">
+            <i class="fas fa-check-circle text-red-500 mt-1 mr-3"></i>
+            <span>Supporting healthcare providers with advanced tools</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Stats Section -->
+<section class="py-16 bg-gradient-to-r from-red-500 to-red-700 text-white">
+  <div class="container mx-auto px-4">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+      <div class="p-6" data-aos="flip-up" data-aos-delay="100">
+        <h3 class="text-4xl font-bold mb-2 stat-counter" id="accuracy">95%</h3>
+        <p class="text-red-100">Accuracy Rate</p>
+      </div>
+      <div class="p-6" data-aos="flip-up" data-aos-delay="200">
+        <h3 class="text-4xl font-bold mb-2 stat-counter" id="assessments">50K+</h3>
+        <p class="text-red-100">Assessments Completed</p>
+      </div>
+      <div class="p-6" data-aos="flip-up" data-aos-delay="300">
+        <h3 class="text-4xl font-bold mb-2">24/7</h3>
+        <p class="text-red-100">Available Support</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Team Section -->
+<section class="py-16 bg-white">
+  <div class="container mx-auto px-4">
+    <div class="text-center mb-16" data-aos="fade-down">
+      <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">Our Team</h2>
+      <p class="text-gray-600 max-w-2xl mx-auto">
+        Meet the dedicated professionals behind CardioGuard.
+      </p>
+      <div class="w-24 h-1 bg-red-500 rounded-full mx-auto mt-4 scale-hover"></div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <!-- Team Member 1 -->
+      <div class="text-center scale-hover" data-aos="zoom-in" data-aos-delay="100">
+        <div class="bg-gray-200 border-2 border-dashed rounded-full w-32 h-32 mx-auto mb-4 overflow-hidden transition-transform duration-500 hover:rotate-6">
+          <img src="https://res.cloudinary.com/dkhsho6qq/image/upload/v1762030506/abeeb_xey11b.jpg" class="w-full h-full object-cover">
+        </div>
+        <h3 class="text-xl font-bold text-gray-800">Dr. Abdulazeez Abeeb Ayinde</h3>
+        <p class="text-red-500">Chief Medical Officer</p>
+        <p class="text-gray-600 mt-2">The team medical advisor</p>
+      </div>
+      <!-- Team Member 2 -->
+      <div class="text-center scale-hover" data-aos="zoom-in" data-aos-delay="200">
+        <div class="bg-gray-200 border-2 border-dashed rounded-full w-32 h-32 mx-auto mb-4 overflow-hidden transition-transform duration-500 hover:rotate-6">
+          <img src="https://res.cloudinary.com/dkhsho6qq/image/upload/v1762020532/babatunde_dgcje3.jpg" alt="Babatunde Abdullahi" class="w-full h-full object-cover">
+        </div>
+        <h3 class="text-xl font-bold text-gray-800">Babatunde Abdullahi</h3>
+        <p class="text-red-500">Marketing Strategist</p>
+        <p class="text-gray-600 mt-2">5+ years Experience in Digital marketing</p>
+      </div>
+      <!-- Team Member 3 -->
+      <div class="text-center scale-hover" data-aos="zoom-in" data-aos-delay="300">
+        <div class="bg-gray-200 border-2 border-dashed rounded-full w-32 h-32 mx-auto mb-4 overflow-hidden transition-transform duration-500 hover:rotate-6">
+          <img src="https://res.cloudinary.com/dkhsho6qq/image/upload/v1762020530/my-photo_shp4pm.jpg" alt="Yusuf B.M" class="w-full h-full object-cover">
+        </div>
+        <h3 class="text-xl font-bold text-gray-800">Yusuf B.M</h3>
+        <p class="text-red-500">Lead Developer</p>
+        <p class="text-gray-600 mt-2">Full-stack specialist</p>
+      </div>
+      <!-- Team Member 4 -->
+      <div class="text-center scale-hover" data-aos="zoom-in" data-aos-delay="400">
+        <div class="bg-gray-200 border-2 border-dashed rounded-full w-32 h-32 mx-auto mb-4 overflow-hidden transition-transform duration-500 hover:rotate-6">
+          <img src="https://res.cloudinary.com/dkhsho6qq/image/upload/v1762020532/muhammad_ci3izr.png" alt="Muhammad Mikail" class="w-full h-full object-cover">
+        </div>
+        <h3 class="text-xl font-bold text-gray-800">Muhammad Mikail</h3>
+        <p class="text-red-500">Data Scientist</p>
+        <p class="text-gray-600 mt-2">AI/ML Engineer</p>
+      </div>
+      <!-- Team Member 5 -->
+      <div class="text-center scale-hover" data-aos="zoom-in" data-aos-delay="400">
+        <div class="bg-gray-200 border-2 border-dashed rounded-full w-32 h-32 mx-auto mb-4 overflow-hidden transition-transform duration-500 hover:rotate-6">
+          <img src="https://res.cloudinary.com/dkhsho6qq/image/upload/v1762020531/proglogo_uekaop.jpg" alt="Wasiu Oyenuga" class="w-full h-full object-cover">
+        </div>
+        <h3 class="text-xl font-bold text-gray-800">Wasiu Oyenuga</h3>
+        <p class="text-red-500">Intelligent System and Informatics Specialist</p>
+        <p class="text-gray-600 mt-2">AI/ML Engineer</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Simple counter visibility trigger for stats
+  const stats = document.querySelectorAll('.stat-counter');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.5 });
+  stats.forEach(stat => observer.observe(stat));
+</script>
+{% endblock %}

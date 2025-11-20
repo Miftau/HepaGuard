@@ -1,0 +1,67 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f4f6f8;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+}
+
+.container {
+  background: #fff;
+  border-radius: 15px;
+  padding: 40px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+  width: 600px;
+  text-align: center;
+}
+
+h1 {
+  color: #d32f2f;
+}
+
+button {
+  background: #d32f2f;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  margin-top: 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+button:hover {
+  background: #b71c1c;
+}
+
+.error {
+  color: red;
+  margin-bottom: 15px;
+}
+
+.download-btn {
+  display: inline-block;
+  background: #2e7d32;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 5px;
+  text-decoration: none;
+}
+
+.download-btn:hover {
+  background: #1b5e20;
+}
+
+.table {
+  margin-top: 20px;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th, .table td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: center;
+}

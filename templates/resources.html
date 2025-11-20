@@ -1,0 +1,265 @@
+
+{% extends 'base.html' %}
+{% block content %}
+<!-- Hero Section -->
+<section class="bg-gradient-to-r from-red-50 to-white py-16 border-b">
+  <div class="container mx-auto px-4">
+    <div class="max-w-3xl mx-auto text-center">
+      <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">Heart Health Resources</h1>
+      <p class="text-xl text-gray-600 mb-6">
+        Tools, guides, and information to support your cardiovascular health
+      </p>
+      <div class="w-24 h-1 bg-red-500 rounded-full mx-auto"></div>
+    </div>
+  </div>
+</section>
+
+<!-- Resource Categories -->
+<section class="py-16">
+  <div class="container mx-auto px-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <!-- Category 1 -->
+      <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">
+        <div class="bg-red-500 p-6">
+          <i class="fas fa-heartbeat text-white text-4xl mb-4"></i>
+          <h3 class="text-xl font-bold text-white">Risk Factors Guide</h3>
+        </div>
+        <div class="p-6">
+          <p class="text-gray-600 mb-4">Understand the key factors that contribute to heart disease and how to manage them.</p>
+          <ul class="space-y-2 mb-6">
+            <li class="flex items-start">
+              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
+              <span>Cholesterol management</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
+              <span>Blood pressure control</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
+              <span>Family history considerations</span>
+            </li>
+          </ul>
+          <a href="https://www.nhlbi.nih.gov/health/heart-failure/causes#:~:text=Aging%20can%20weaken%20and%20stiffen,failure%20at%20a%20younger%20age." class="text-red-500 font-medium hover:underline flex items-center">
+            Explore Guide
+            <i class="fas fa-arrow-right ml-2 text-sm"></i>
+          </a>
+        </div>
+      </div>
+      
+      <!-- Category 2 -->
+      <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">
+        <div class="bg-red-600 p-6">
+          <i class="fas fa-dumbbell text-white text-4xl mb-4"></i>
+          <h3 class="text-xl font-bold text-white">Exercise Plans</h3>
+        </div>
+        <div class="p-6">
+          <p class="text-gray-600 mb-4">Cardiovascular exercise routines for all fitness levels to strengthen your heart.</p>
+          <ul class="space-y-2 mb-6">
+            <li class="flex items-start">
+              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
+              <span>Beginner walking programs</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
+              <span>Intermediate cardio workouts</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
+              <span>Strength training basics</span>
+            </li>
+          </ul>
+          <a href="https://www.bswhealth.com/blog/heart-smart-workouts#:~:text=Examples%20of%20heart%2Dhealthy%20exercises,and%20improve%20flexibility%20and%20strength" class="text-red-500 font-medium hover:underline flex items-center">
+            View Plans
+            <i class="fas fa-arrow-right ml-2 text-sm"></i>
+          </a>
+        </div>
+      </div>
+      
+      <!-- Category 3 -->
+      <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">
+        <div class="bg-red-700 p-6">
+          <i class="fas fa-utensils text-white text-4xl mb-4"></i>
+          <h3 class="text-xl font-bold text-white">Heart-Healthy Recipes</h3>
+        </div>
+        <div class="p-6">
+          <p class="text-gray-600 mb-4">Nutritious meals designed to support cardiovascular health and lower risk factors.</p>
+          <ul class="space-y-2 mb-6">
+            <li class="flex items-start">
+              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
+              <span>Low-sodium meals</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
+              <span>Omega-3 rich foods</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
+              <span>Antioxidant-packed options</span>
+            </li>
+          </ul>
+          <a href="https://www.ahajournals.org/doi/10.1161/cir.0000000000001031" class="text-red-500 font-medium hover:underline flex items-center">
+            View Recipes
+            <i class="fas fa-arrow-right ml-2 text-sm"></i>
+          </a>
+        </div>
+      </div>
+      
+      <!-- Category 4 -->
+      <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">
+        <div class="bg-red-500 p-6">
+          <i class="fas fa-book-medical text-white text-4xl mb-4"></i>
+          <h3 class="text-xl font-bold text-white">Medical Information</h3>
+        </div>
+        <div class="p-6">
+          <p class="text-gray-600 mb-4">Learn about common heart conditions, symptoms, and treatment options.</p>
+          <ul class="space-y-2 mb-6">
+            <li class="flex items-start">
+              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
+              <span>Understanding arrhythmias</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
+              <span>Heart failure management</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
+              <span>Angioplasty and stents</span>
+            </li>
+          </ul>
+          <a href="https://my.clevelandclinic.org/health/diseases/24129-heart-disease" class="text-red-500 font-medium hover:underline flex items-center">
+            Learn More
+            <i class="fas fa-arrow-right ml-2 text-sm"></i>
+          </a>
+        </div>
+      </div>
+      
+      <!-- Category 5 -->
+      <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">
+        <div class="bg-red-600 p-6">
+          <i class="fas fa-user-md text-white text-4xl mb-4"></i>
+          <h3 class="text-xl font-bold text-white">Finding Care</h3>
+        </div>
+        <div class="p-6">
+          <p class="text-gray-600 mb-4">Resources to help you find qualified healthcare providers and support groups.</p>
+          <ul class="space-y-2 mb-6">
+            <li class="flex items-start">
+              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
+              <span>Cardiologist directory</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
+              <span>Telemedicine options</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
+              <span>Support groups</span>
+            </li>
+          </ul>
+          <a href="https://www.dhcs.ca.gov/services/medi-cal/Pages/FQHC_RHC.aspx#:~:text=The%20Health%20Resources%20and%20Service%20Administration%20(HRSA),find%20a%20Federally%20Qualified%20Health%20Center%20(FQHC)." class="text-red-500 font-medium hover:underline flex items-center">
+            Find Care
+            <i class="fas fa-arrow-right ml-2 text-sm"></i>
+          </a>
+        </div>
+      </div>
+      
+      <!-- Category 6 -->
+      <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">
+        <div class="bg-red-700 p-6">
+          <i class="fas fa-mobile-alt text-white text-4xl mb-4"></i>
+          <h3 class="text-xl font-bold text-white">Health Apps</h3>
+        </div>
+        <div class="p-6">
+          <p class="text-gray-600 mb-4">Recommended applications to track your heart health, medications, and appointments.</p>
+          <ul class="space-y-2 mb-6">
+            <li class="flex items-start">
+              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
+              <span>Heart rate monitors</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
+              <span>Medication reminders</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check-circle text-red-500 mt-1 mr-2"></i>
+              <span>Appointment trackers</span>
+            </li>
+          </ul>
+          <a href="https://pcna.net/news/8-smart-mobile-apps-and-gadgets-for-heart-health/#:~:text=With%20more%20studies%20suggesting%20that,help%20when%20CPR%20is%20needed." class="text-red-500 font-medium hover:underline flex items-center">
+            View Apps
+            <i class="fas fa-arrow-right ml-2 text-sm"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Additional Resources Section -->
+<section class="py-16 bg-gray-50">
+  <div class="container mx-auto px-4">
+    <div class="text-center mb-16">
+      <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">Additional Resources</h2>
+      <p class="text-gray-600 max-w-2xl mx-auto">
+        Helpful links and information from trusted health organizations
+      </p>
+      <div class="w-24 h-1 bg-red-500 rounded-full mx-auto mt-4"></div>
+    </div>
+    
+    <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+      <a href="https://www.heart.org" target="_blank" class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-start hover:shadow-md transition">
+        <div class="bg-red-100 p-3 rounded-full mr-4">
+          <i class="fas fa-external-link-alt text-red-500"></i>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">American Heart Association</h3>
+          <p class="text-gray-600">Comprehensive heart health information and research</p>
+        </div>
+      </a>
+      
+      <a href="https://www.cdc.gov/heartdisease" target="_blank" class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-start hover:shadow-md transition">
+        <div class="bg-red-100 p-3 rounded-full mr-4">
+          <i class="fas fa-external-link-alt text-red-500"></i>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">CDC Heart Disease</h3>
+          <p class="text-gray-600">Statistics, prevention tips, and public health resources</p>
+        </div>
+      </a>
+      
+      <a href="https://www.nih.gov/health-information" target="_blank" class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-start hover:shadow-md transition">
+        <div class="bg-red-100 p-3 rounded-full mr-4">
+          <i class="fas fa-external-link-alt text-red-500"></i>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">NIH Health Information</h3>
+          <p class="text-gray-600">Research-based health information from the National Institutes of Health</p>
+        </div>
+      </a>
+      
+      <a href="https://www.mayoclinic.org/diseases-conditions/heart-disease" target="_blank" class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-start hover:shadow-md transition">
+        <div class="bg-red-100 p-3 rounded-full mr-4">
+          <i class="fas fa-external-link-alt text-red-500"></i>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">Mayo Clinic</h3>
+          <p class="text-gray-600">Detailed information about heart conditions and treatments</p>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-16 bg-gradient-to-r from-red-500 to-red-700 text-white">
+  <div class="container mx-auto px-4 text-center">
+    <h2 class="text-3xl md:text-4xl font-bold mb-6">Take Control of Your Heart Health</h2>
+    <p class="text-xl mb-8 max-w-2xl mx-auto">
+      Start your personalized heart health assessment today
+    </p>
+    <a href="/form" class="bg-white text-red-600 hover:bg-gray-100 font-bold py-4 px-8 rounded-lg text-lg inline-block transition duration-300">
+      Begin Assessment
+    </a>
+  </div>
+</section>
+{% endblock %}

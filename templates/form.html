@@ -1,0 +1,354 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-red-600 to-pink-600 text-white py-8 shadow-lg">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+      <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Health Prediction Portal</h1>
+      <p class="mt-2 text-sm opacity-95">
+        Switch between <strong>Clinical</strong> and <strong>Lifestyle</strong> models for predictions.
+      </p>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-4xl mx-auto w-full px-4 sm:px-6 py-8 space-y-8 flex-grow">
+
+    {% if error %}
+      <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
+        <p class="text-red-700 font-medium flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+          </svg>
+          {{ error }}
+        </p>
+      </div>
+    {% endif %}
+
+    <!-- Model & Input Selector Card -->
+    <section class="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+      <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+        <h2 class="font-semibold text-lg text-gray-800 flex items-center">
+          <span class="bg-red-100 text-red-700 w-6 h-6 rounded-full flex items-center justify-center text-xs mr-2">Settings</span>
+          Choose Model & Input Type
+        </h2>
+      </div>
+      <div class="p-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Select Model</label>
+            <div class="relative">
+              <select id="model_type" name="model_type" class="w-full bg-white border border-gray-300 rounded-xl py-3 pl-4 pr-10 appearance-none focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition">
+                <option value="heart">Clinical Model</option>
+                <option value="cardio">Lifestyle Model</option>
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Select Input Mode</label>
+            <div class="relative">
+              <select id="input_mode" name="input_mode" class="w-full bg-white border border-gray-300 rounded-xl py-3 pl-4 pr-10 appearance-none focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition">
+                <option value="manual">Manual Input</option>
+                <option value="csv">CSV Upload</option>
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Prediction Form Card -->
+    <form action="/predict" method="post" enctype="multipart/form-data" id="predictionForm"
+          class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200">
+
+      <div class="bg-gradient-to-r from-red-50 to-pink-50 px-6 py-4 border-b border-gray-200">
+        <h2 class="font-bold text-lg text-gray-800 flex items-center">
+          <span class="bg-pink-100 text-pink-700 w-6 h-6 rounded-full flex items-center justify-center text-xs mr-2">Data</span>
+          Prediction Inputs
+        </h2>
+      </div>
+
+      <div class="p-6">
+        <input type="hidden" name="model_type" id="hidden_model_type" value="heart">
+
+        <!-- CSV Upload Section (Design Preserved) -->
+        <div id="csv_section" class="hidden">
+          <div class="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center bg-gray-50 hover:bg-gray-100 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            <h3 class="font-medium text-gray-800 mb-1">Upload Patient Data or Your data (CSV)</h3>
+            <p class="text-sm text-gray-600 mb-4">Supports .csv files only. Ensure columns match model requirements. <br> for clinical ("age", "sex", "cp", "trestbps", "chol", "fbs", "restecg",
+    "thalach", "exang", "oldpeak", "slope", "ca", "thal") <br> For Lifestyle ("age", "gender", "height", "weight", "ap_hi", "ap_lo",
+    "cholesterol", "gluc", "smoke", "alco", "active")</p>
+            <input type="file" name="file" accept=".csv" class="hidden" id="csvFileInput">
+            <label for="csvFileInput" class="cursor-pointer inline-block bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-sm">
+              Choose File
+            </label>
+            <p id="fileName" class="mt-2 text-xs text-gray-500"></p>
+          </div>
+        </div>
+
+        <!-- Manual Input Section: Enhanced Responsive Grid -->
+        <div id="manual_section" class="space-y-8">
+
+          <!-- Clinical Model Fields -->
+          <div class="clinical-fields grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <!-- Row 1 -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Age (years)</label>
+              <input name="age" type="number" step="1" required class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Sex</label>
+              <select name="sex" required class="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition">
+                <option value="">Select...</option>
+                <option value="1">Male</option>
+                <option value="0">Female</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Chest Pain Type (cp)</label>
+              <select name="cp" required class="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition">
+                <option value="">Select...</option>
+                <option value="0">Typical Angina</option>
+                <option value="1">Atypical Angina</option>
+                <option value="2">Non-Anginal Pain</option>
+                <option value="3">Asymptomatic</option>
+              </select>
+            </div>
+
+            <!-- Row 2 -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Resting BP (trestbps)</label>
+              <input name="trestbps" type="number" step="1" required class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Cholesterol (chol)</label>
+              <input name="chol" type="number" step="1" required class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Fasting Blood Sugar > 120</label>
+              <select name="fbs" required class="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition">
+                <option value="">Select...</option>
+                <option value="1">True</option>
+                <option value="0">False</option>
+              </select>
+            </div>
+
+            <!-- Row 3 -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Resting ECG (restecg)</label>
+              <select name="restecg" required class="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition">
+                <option value="">Select...</option>
+                <option value="0">Normal</option>
+                <option value="1">ST-T Abnormality</option>
+                <option value="2">LV Hypertrophy</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Max Heart Rate (thalach)</label>
+              <input name="thalach" type="number" step="1" required class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Exercise Angina (exang)</label>
+              <select name="exang" required class="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition">
+                <option value="">Select...</option>
+                <option value="1">Yes</option>
+                <option value="0">No</option>
+              </select>
+            </div>
+
+            <!-- Row 4 -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">ST Depression (oldpeak)</label>
+              <input name="oldpeak" type="number" step="0.1" required class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Slope</label>
+              <select name="slope" required class="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition">
+                <option value="">Select...</option>
+                <option value="0">Upsloping</option>
+                <option value="1">Flat</option>
+                <option value="2">Downsloping</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Major Vessels (ca)</label>
+              <input name="ca" type="number" step="1" min="0" max="4" required class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition">
+            </div>
+
+            <!-- Row 5 (Thalassemia - Full Width for Clarity) -->
+            <div class="sm:col-span-2 lg:col-span-3">
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Thalassemia (thal)</label>
+              <input name="thal" step="1" type="number" required class="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition">
+                
+            </div>
+          </div>
+
+          <!-- Lifestyle Model Fields -->
+          <div class="lifestyle-fields hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <!-- Row 1 -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Age</label>
+              <input name="age" type="number" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Gender</label>
+              <select name="gender" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition">
+                <option value="">Select...</option>
+                <option value="1">Male</option>
+                <option value="2">Female</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Height (cm)</label>
+              <input name="height" type="number" step="0.1" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition">
+            </div>
+
+            <!-- Row 2 -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Weight (kg)</label>
+              <input name="weight" type="number" step="0.1" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Systolic BP (ap_hi)</label>
+              <input name="ap_hi" type="number" step="1" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Diastolic BP (ap_lo)</label>
+              <input name="ap_lo" type="number" step="1" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition">
+            </div>
+
+            <!-- Row 3 -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Cholesterol</label>
+              <input name="cholesterol" type="number" step="0.1" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition">
+    
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Glucose (1–3)</label>
+              <input name="gluc" type="number" step="0.1" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition">
+
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Smokes</label>
+              <select name="smoke" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition">
+                <option value="0">No</option>
+                <option value="1">Yes</option>
+              </select>
+            </div>
+
+            <!-- Row 4 -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Alcohol</label>
+              <select name="alco" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition">
+                <option value="0">No</option>
+                <option value="1">Yes</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Physically Active</label>
+              <select name="active" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition">
+                <option value="0">No</option>
+                <option value="1">Yes</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="mt-8 pt-6 border-t border-gray-100">
+          <button type="submit"
+            class="w-full sm:w-auto mx-auto block bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white font-semibold px-6 py-3.5 rounded-xl shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+            Predict Risk
+          </button>
+        </div>
+      </div>
+    </form>
+  </main>
+</div>
+
+<script>
+  const modelSelector = document.getElementById('model_type');
+  const inputSelector = document.getElementById('input_mode');
+  const hiddenModel = document.getElementById('hidden_model_type');
+  const csvSection = document.getElementById('csv_section');
+  const manualSection = document.getElementById('manual_section');
+  const clinicalFields = document.querySelector('.clinical-fields');
+  const lifestyleFields = document.querySelector('.lifestyle-fields');
+
+  // Helper function to toggle required attributes
+  function toggleRequired(fields, required) {
+    fields.querySelectorAll('input, select').forEach(el => {
+      if (required) el.setAttribute('required', 'required');
+      else el.removeAttribute('required');
+    });
+  }
+
+  modelSelector.addEventListener('change', e => {
+    hiddenModel.value = e.target.value;
+
+    if (e.target.value === 'cardio') {
+      clinicalFields.classList.add('hidden');
+      lifestyleFields.classList.remove('hidden');
+      toggleRequired(clinicalFields, false);
+      toggleRequired(lifestyleFields, true);
+    } else {
+      lifestyleFields.classList.add('hidden');
+      clinicalFields.classList.remove('hidden');
+      toggleRequired(lifestyleFields, false);
+      toggleRequired(clinicalFields, true);
+    }
+  });
+
+  inputSelector.addEventListener('change', e => {
+    if (e.target.value === 'csv') {
+      csvSection.classList.remove('hidden');
+      manualSection.classList.add('hidden');
+    } else {
+      csvSection.classList.add('hidden');
+      manualSection.classList.remove('hidden');
+    }
+  });
+
+  // Initialize default state
+  document.addEventListener('DOMContentLoaded', () => {
+    hiddenModel.value = modelSelector.value;
+    if (modelSelector.value === 'cardio') {
+      clinicalFields.classList.add('hidden');
+      lifestyleFields.classList.remove('hidden');
+      toggleRequired(clinicalFields, false);
+      toggleRequired(lifestyleFields, true);
+    } else {
+      lifestyleFields.classList.add('hidden');
+      clinicalFields.classList.remove('hidden');
+      toggleRequired(lifestyleFields, false);
+      toggleRequired(clinicalFields, true);
+    }
+
+    if (inputSelector.value === 'csv') {
+      csvSection.classList.remove('hidden');
+      manualSection.classList.add('hidden');
+    }
+  });
+
+  document.getElementById('csvFileInput')?.addEventListener('change', function(e) {
+    const fileName = e.target.files[0]?.name || 'No file chosen';
+    document.getElementById('fileName').textContent = fileName;
+  });
+</script>
+{% endblock %}
